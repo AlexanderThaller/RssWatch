@@ -25,9 +25,18 @@ func main() {
 	l.Notice("Starting")
 	defer l.Notice("Finished")
 
-	u := []string{`http://www.reddit.com/.rss`}
-	x := "heB_z0rL@jabber.ccc.de"
-	f := []string{".*cracked.*", ".*was.*"}
+	x := "admin@ejabberd"
+
+	u := []string{
+		`http://www.reddit.com/.rss`,
+		`http://www.rottentomatoes.com/syndication/rss/opening.xml`,
+	}
+
+	f := []string{
+		`.*cracked.*`,
+		`.*was.*`,
+		`.*[F|f]ear.*`,
+	}
 
 	i := make(chan *rss.Item, 50000)
 	o := make(chan *rss.Item, 50000)
@@ -122,13 +131,13 @@ func watchXMPP(id string, ch <-chan *rss.Item) (err error) {
 	defer l.Info("Finished")
 
 	// username
-	u := ""
+	u := "test"
 
 	// domain
-	d := ""
+	d := "ejabberd"
 
 	// password
-	p := ""
+	p := "test"
 
 	h := d + ":5222"
 
@@ -141,7 +150,7 @@ func watchXMPP(id string, ch <-chan *rss.Item) (err error) {
 		TrustedAddress:          true,
 		Archive:                 false,
 		ServerCertificateSHA256: []byte(""),
-		SkipTLS:                 false,
+		SkipTLS:                 true,
 	}
 
 	o, err := xmpp.Dial(h, u, d, p, &c)
@@ -151,9 +160,8 @@ func watchXMPP(id string, ch <-chan *rss.Item) (err error) {
 
 	go func() {
 		for {
-			o.Send("hebz0rl@jabber.ccc.de", "Test")
-
-			time.Sleep(5 * time.Second)
+			i := <-ch
+			o.Send(id, strings.TrimSpace(i.Title))
 		}
 	}()
 
