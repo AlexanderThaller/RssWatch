@@ -4,6 +4,7 @@ import (
 	"github.com/AlexanderThaller/logger"
 	"github.com/AlexanderThaller/misc"
 	"github.com/SlyMarbo/rss"
+	"github.com/agl/xmpp"
 	"net/url"
 	"os"
 	"regexp"
@@ -116,6 +117,46 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item) (err error) {
 }
 
 func watchXMPP(id string, ch <-chan *rss.Item) (err error) {
+	l := logger.New(name + ".watch.xmpp")
+	l.Info("Starting")
+	defer l.Info("Finished")
+
+	// username
+	u := ""
+
+	// domain
+	d := ""
+
+	// password
+	p := ""
+
+	h := d + ":5222"
+
+	c := xmpp.Config{
+		Conn:                    nil,
+		InLog:                   nil,
+		OutLog:                  nil,
+		Log:                     nil,
+		Create:                  false,
+		TrustedAddress:          true,
+		Archive:                 false,
+		ServerCertificateSHA256: []byte(""),
+		SkipTLS:                 false,
+	}
+
+	o, err := xmpp.Dial(h, u, d, p, &c)
+	if err != nil {
+		return
+	}
+
+	go func() {
+		for {
+			o.Send("hebz0rl@jabber.ccc.de", "Test")
+
+			time.Sleep(5 * time.Second)
+		}
+	}()
+
 	return
 }
 
