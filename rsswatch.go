@@ -301,7 +301,8 @@ func watchFilter(fi string, ou chan<- *rss.Item) (cin chan<- *rss.Item, err erro
 		for {
 			i := <-c
 
-			if r.Match([]byte(i.Title)) {
+			s := r.Match([]byte(i.Title)) || r.Match([]byte(i.Content))
+			if s {
 				l.Debug("Matched item: ", i.Title)
 				ou <- i
 			}
