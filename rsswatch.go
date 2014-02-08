@@ -239,6 +239,9 @@ func watchXMPP(ch <-chan *rss.Item, co *Config) (err error) {
 		return
 	}
 
+	// Let server know that we are online.
+	o.SignalPresence("")
+
 	go func() {
 		for {
 			i := <-ch
