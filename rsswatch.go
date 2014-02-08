@@ -1,12 +1,15 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/AlexanderThaller/logger"
 	"github.com/AlexanderThaller/misc"
 	"github.com/SlyMarbo/rss"
 	"github.com/agl/xmpp"
+	"io/ioutil"
 	"net/url"
 	"os"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -17,15 +20,14 @@ const (
 )
 
 func init() {
-	logger.SetLevel(name+".watch.filter", logger.Debug)
+	logger.SetLevel(name+".load.feed", logger.Debug)
+	logger.SetLevel(name+".write.feed", logger.Debug)
 }
 
 func main() {
 	l := logger.New(name + ".main")
 	l.Notice("Starting")
 	defer l.Notice("Finished")
-
-	x := "admin@ejabberd"
 
 	u := []string{
 		`http://www.reddit.com/.rss`,
@@ -38,22 +40,30 @@ func main() {
 		`.*[F|f]ear.*`,
 	}
 
+	c := Config{
+		DataFolder:      "feeds",
+		SaveFeeds:       true,
+		XmppDestination: "admin@ejabberd",
+		Feeds:           u,
+		Filters:         f,
+	}
+
 	i := make(chan *rss.Item, 50000)
 	o := make(chan *rss.Item, 50000)
 
-	e := watchFeeds(u, i)
+	e := watchFeeds(i, &c)
 	if e != nil {
 		l.Alert("Probem when parsing feed: ", e)
 		os.Exit(1)
 	}
 
-	e = watchXMPP(x, o)
+	e = watchXMPP(o, &c)
 	if e != nil {
 		l.Alert("Problem when connecting to xmpp: ", e)
 		os.Exit(1)
 	}
 
-	e = watchFilters(f, i, o)
+	e = watchFilters(i, o, &c)
 	if e != nil {
 		l.Alert("Problem when starting filters: ", e)
 		os.Exit(1)
@@ -64,19 +74,25 @@ func main() {
 	os.Exit(0)
 }
 
-func watchFeeds(fe []string, ch chan<- *rss.Item) (err error) {
+func watchFeeds(ch chan<- *rss.Item, co *Config) (err error) {
 	l := logger.New(name + ".watch.feeds")
 	l.Info("Starting")
 	defer l.Info("Finished")
 
-	for _, d := range fe {
+	l.Info("Creating data folder " + co.DataFolder)
+	err = os.MkdirAll(co.DataFolder, 0755)
+	if err != nil {
+		return
+	}
+
+	for _, d := range co.Feeds {
 		u, e := url.Parse(d)
 		if e != nil {
 			l.Warning("Can not parse feed url ", u, ": ", e)
 			continue
 		}
 
-		e = watchFeed(u, ch)
+		e = watchFeed(u, ch, co)
 		if e != nil {
 			l.Warning("Can not watch feed ", u, ": ", e)
 			continue
@@ -88,7 +104,7 @@ func watchFeeds(fe []string, ch chan<- *rss.Item) (err error) {
 	return
 }
 
-func watchFeed(ur *url.URL, ch chan<- *rss.Item) (err error) {
+func watchFeed(ur *url.URL, ch chan<- *rss.Item, co *Config) (err error) {
 	l := logger.New(name + ".watch.feed." + ur.Host + ur.Path)
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -98,7 +114,10 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item) (err error) {
 		return
 	}
 
-	m := make(map[string]struct{})
+	m, err := loadFeed(ur, co)
+	if err != nil {
+		return
+	}
 
 	l.Info("Run loop")
 	go func() {
@@ -106,10 +125,17 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item) (err error) {
 			l.Debug("Items: ", f.Items)
 
 			for _, d := range f.Items {
-				if _, t := m[d.Link]; t == false {
-					l.Debug("New item: ", strings.TrimSpace(d.Title))
-					m[d.Link] = struct{}{}
-					ch <- d
+				if _, t := m[d.Link]; t == true {
+					continue
+				}
+
+				l.Debug("New item: ", strings.TrimSpace(d.Title))
+				m[d.Link] = struct{}{}
+				ch <- d
+
+				e := writeFeed(m, ur, co)
+				if e != nil {
+					l.Warning("Can not write feed data: ", e)
 				}
 			}
 
@@ -125,7 +151,62 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item) (err error) {
 	return
 }
 
-func watchXMPP(id string, ch <-chan *rss.Item) (err error) {
+func loadFeed(ur *url.URL, co *Config) (itm map[string]struct{}, err error) {
+	l := logger.New(name + ".load.feed." + ur.Host + ur.Path)
+	l.Info("Starting")
+	defer l.Info("Finished")
+
+	itm = make(map[string]struct{})
+	if !co.SaveFeeds {
+		return
+	}
+
+	p := genFeedPath(ur, co)
+	l.Debug("Path: ", p)
+
+	i, err := ioutil.ReadFile(p)
+	if err == nil {
+		err = json.Unmarshal(i, &itm)
+		return
+	}
+	err = nil
+
+	return
+}
+
+func genFeedPath(ur *url.URL, co *Config) string {
+	a := strings.Replace(ur.Host+ur.Path, "/", "_", -1)
+	p := path.Clean(co.DataFolder + "/" + a)
+
+	return p
+}
+
+func writeFeed(ma map[string]struct{}, ur *url.URL, co *Config) (err error) {
+	l := logger.New(name + ".load.feed." + ur.Host + ur.Path)
+	l.Info("Starting")
+	defer l.Info("Finished")
+
+	if !co.SaveFeeds {
+		return
+	}
+
+	p := genFeedPath(ur, co)
+	l.Debug("Path: ", p)
+
+	o, err := json.Marshal(ma)
+	if err != nil {
+		return
+	}
+
+	err = ioutil.WriteFile(p, o, 0644)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func watchXMPP(ch <-chan *rss.Item, co *Config) (err error) {
 	l := logger.New(name + ".watch.xmpp")
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -161,21 +242,21 @@ func watchXMPP(id string, ch <-chan *rss.Item) (err error) {
 	go func() {
 		for {
 			i := <-ch
-			o.Send(id, strings.TrimSpace(i.Title))
+			o.Send(co.XmppDestination, strings.TrimSpace(i.Title))
 		}
 	}()
 
 	return
 }
 
-func watchFilters(fi []string, in <-chan *rss.Item, ou chan<- *rss.Item) (err error) {
+func watchFilters(in <-chan *rss.Item, ou chan<- *rss.Item, co *Config) (err error) {
 	l := logger.New(name + ".watch.filters")
 	l.Info("Starting")
 	defer l.Info("Finished")
 
 	var c []chan<- *rss.Item
 
-	for _, d := range fi {
+	for _, d := range co.Filters {
 		f, e := watchFilter(d, ou)
 
 		if e != nil {
