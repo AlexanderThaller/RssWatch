@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"github.com/AlexanderThaller/logger"
 	"github.com/AlexanderThaller/misc"
 	"github.com/SlyMarbo/rss"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -19,46 +21,43 @@ const (
 	name = "RssWatch"
 )
 
+var (
+	configpath = flag.String("c", name + ".cnf", "The path to the config file.")
+)
+
+func init() {
+	logger.SetLevel(".", logger.Info)
+  logger.SetLevel("configure", logger.Debug)
+	flag.Parse()
+}
+
 func main() {
 	l := logger.New(name + ".main")
 	l.Notice("Starting")
 	defer l.Notice("Finished")
 
-	u := []string{
-		`http://www.reddit.com/.rss`,
-		`http://www.rottentomatoes.com/syndication/rss/opening.xml`,
-	}
-
-	f := []string{
-		`.*cracked.*`,
-		`.*was.*`,
-		`.*[F|f]ear.*`,
-	}
-
-	c := Config{
-		DataFolder:      "feeds",
-		SaveFeeds:       true,
-		XmppDestination: "admin@ejabberd",
-		Feeds:           u,
-		Filters:         f,
+	c, e := configure(*configpath)
+	if e != nil {
+		l.Alert("Problem when configuring: ", e)
+		os.Exit(1)
 	}
 
 	i := make(chan *rss.Item, 50000)
 	o := make(chan *rss.Item, 50000)
 
-	e := watchFeeds(i, &c)
+	e = watchFeeds(i, c)
 	if e != nil {
 		l.Alert("Probem when parsing feed: ", e)
 		os.Exit(1)
 	}
 
-	e = watchXMPP(o, &c)
+	e = watchXMPP(o, c)
 	if e != nil {
 		l.Alert("Problem when connecting to xmpp: ", e)
 		os.Exit(1)
 	}
 
-	e = watchFilters(i, o, &c)
+	e = watchFilters(i, o, c)
 	if e != nil {
 		l.Alert("Problem when starting filters: ", e)
 		os.Exit(1)
@@ -69,7 +68,31 @@ func main() {
 	os.Exit(0)
 }
 
-func watchFeeds(ch chan<- *rss.Item, co *Config) (err error) {
+func configure(pa string) (con *config, err error) {
+	l := logger.New(name + ".configure")
+	l.Info("Starting")
+	defer l.Info("Finished")
+
+	l.Info(`Loading config from path "`, pa, `"`)
+	i, err := ioutil.ReadFile(pa)
+	if err == nil {
+		l.Debug("simplemond.configure", "Using file \"", pa, "\" for config")
+
+		err = json.Unmarshal(i, &con)
+		return
+	}
+
+  c := new(config)
+  c.Default()
+  con = c
+
+	o, _ := json.Marshal(con)
+	err = ioutil.WriteFile(pa, o, 0600)
+
+	return
+}
+
+func watchFeeds(ch chan<- *rss.Item, co *config) (err error) {
 	l := logger.New(name + ".watch.feeds")
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -99,7 +122,7 @@ func watchFeeds(ch chan<- *rss.Item, co *Config) (err error) {
 	return
 }
 
-func watchFeed(ur *url.URL, ch chan<- *rss.Item, co *Config) (err error) {
+func watchFeed(ur *url.URL, ch chan<- *rss.Item, co *config) (err error) {
 	l := logger.New(name + ".watch.feed." + ur.Host + ur.Path)
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -146,7 +169,7 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item, co *Config) (err error) {
 	return
 }
 
-func loadFeed(ur *url.URL, co *Config) (itm map[string]struct{}, err error) {
+func loadFeed(ur *url.URL, co *config) (itm map[string]struct{}, err error) {
 	l := logger.New(name + ".load.feed." + ur.Host + ur.Path)
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -169,14 +192,14 @@ func loadFeed(ur *url.URL, co *Config) (itm map[string]struct{}, err error) {
 	return
 }
 
-func genFeedPath(ur *url.URL, co *Config) string {
+func genFeedPath(ur *url.URL, co *config) string {
 	a := strings.Replace(ur.Host+ur.Path, "/", "_", -1)
 	p := path.Clean(co.DataFolder + "/" + a)
 
 	return p
 }
 
-func writeFeed(ma map[string]struct{}, ur *url.URL, co *Config) (err error) {
+func writeFeed(ma map[string]struct{}, ur *url.URL, co *config) (err error) {
 	l := logger.New(name + ".load.feed." + ur.Host + ur.Path)
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -201,21 +224,21 @@ func writeFeed(ma map[string]struct{}, ur *url.URL, co *Config) (err error) {
 	return
 }
 
-func watchXMPP(ch <-chan *rss.Item, co *Config) (err error) {
+func watchXMPP(ch <-chan *rss.Item, co *config) (err error) {
 	l := logger.New(name + ".watch.xmpp")
 	l.Info("Starting")
 	defer l.Info("Finished")
 
 	// username
-	u := "test"
+	u := co.XmppUsername
 
 	// domain
-	d := "ejabberd"
+	d := co.XmppDomain
 
 	// password
-	p := "test"
+	p := co.XmppPassword
 
-	h := d + ":5222"
+	h := d + ":" + strconv.FormatUint(uint64(co.XmppPort), 10)
 
 	c := xmpp.Config{
 		Conn:                    nil,
@@ -226,7 +249,7 @@ func watchXMPP(ch <-chan *rss.Item, co *Config) (err error) {
 		TrustedAddress:          true,
 		Archive:                 false,
 		ServerCertificateSHA256: []byte(""),
-		SkipTLS:                 true,
+		SkipTLS:                 co.XmppSkipTLS,
 	}
 
 	o, err := xmpp.Dial(h, u, d, p, &c)
@@ -247,7 +270,7 @@ func watchXMPP(ch <-chan *rss.Item, co *Config) (err error) {
 	return
 }
 
-func watchFilters(in <-chan *rss.Item, ou chan<- *rss.Item, co *Config) (err error) {
+func watchFilters(in <-chan *rss.Item, ou chan<- *rss.Item, co *config) (err error) {
 	l := logger.New(name + ".watch.filters")
 	l.Info("Starting")
 	defer l.Info("Finished")
