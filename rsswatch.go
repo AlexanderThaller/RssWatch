@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"flag"
 	"github.com/AlexanderThaller/logger"
@@ -22,12 +23,11 @@ const (
 )
 
 var (
-	configpath = flag.String("c", name + ".cnf", "The path to the config file.")
+	configpath = flag.String("c", name+".cnf", "The path to the config file.")
 )
 
 func init() {
 	logger.SetLevel(".", logger.Info)
-  logger.SetLevel("configure", logger.Debug)
 	flag.Parse()
 }
 
@@ -76,17 +76,21 @@ func configure(pa string) (con *config, err error) {
 	l.Info(`Loading config from path "`, pa, `"`)
 	i, err := ioutil.ReadFile(pa)
 	if err == nil {
-		l.Debug("simplemond.configure", "Using file \"", pa, "\" for config")
+		l.Debug(`Using file "`, pa, `" for config`)
 
-		err = json.Unmarshal(i, &con)
+		var b bytes.Buffer
+		json.Compact(&b, i)
+
+		err = json.Unmarshal(b.Bytes(), &con)
 		return
 	}
 
-  c := new(config)
-  c.Default()
-  con = c
+	c := new(config)
+	c.Default()
+	con = c
 
-	o, _ := json.Marshal(con)
+	o, _ := json.MarshalIndent(con, "", "  ")
+
 	err = ioutil.WriteFile(pa, o, 0600)
 
 	return
