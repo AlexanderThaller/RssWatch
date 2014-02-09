@@ -19,11 +19,6 @@ const (
 	name = "RssWatch"
 )
 
-func init() {
-	logger.SetLevel(name+".load.feed", logger.Debug)
-	logger.SetLevel(name+".write.feed", logger.Debug)
-}
-
 func main() {
 	l := logger.New(name + ".main")
 	l.Notice("Starting")
@@ -139,11 +134,11 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item, co *Config) (err error) {
 				}
 			}
 
-			l.Debug("Sleep until ", f.Refresh, "(", f.Refresh.Sub(time.Now()), ")")
+			l.Info("Sleep until ", f.Refresh, "(", f.Refresh.Sub(time.Now()), ")")
 			sleepToTime(f.Refresh)
 			time.Sleep(10 * time.Second)
 
-			l.Debug("Updating")
+			l.Info("Updating")
 			f.Update()
 		}
 	}()
