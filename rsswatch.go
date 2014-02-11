@@ -175,8 +175,8 @@ func watchFeed(ur *url.URL, ch chan<- *rss.Item, co *config) (err error) {
 
 func loadFeed(ur *url.URL, co *config) (itm map[string]struct{}, err error) {
 	l := logger.New(name + ".load.feed." + ur.Host + ur.Path)
-	l.Info("Starting")
-	defer l.Info("Finished")
+	l.Debug("Starting")
+	defer l.Debug("Finished")
 
 	itm = make(map[string]struct{})
 	if !co.SaveFeeds {
@@ -204,9 +204,9 @@ func genFeedPath(ur *url.URL, co *config) string {
 }
 
 func writeFeed(ma map[string]struct{}, ur *url.URL, co *config) (err error) {
-	l := logger.New(name + ".load.feed." + ur.Host + ur.Path)
-	l.Info("Starting")
-	defer l.Info("Finished")
+	l := logger.New(name + ".write.feed." + ur.Host + ur.Path)
+	l.Debug("Starting")
+	defer l.Debug("Finished")
 
 	if !co.SaveFeeds {
 		return
@@ -267,7 +267,20 @@ func watchXMPP(ch <-chan *rss.Item, co *config) (err error) {
 	go func() {
 		for {
 			i := <-ch
-			o.Send(co.XmppDestination, strings.TrimSpace(i.Title))
+			m := strings.TrimSpace(i.Title)
+			m += " - "
+
+			a := strings.TrimSpace(i.Content)
+			if len(a) > 150 {
+				m += a[0:150] + "\n..."
+			} else {
+				m += a
+			}
+			m += "\n\n"
+			m += i.Link
+
+			o.Send(co.XmppDestination, m)
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
