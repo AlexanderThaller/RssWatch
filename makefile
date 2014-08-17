@@ -7,7 +7,8 @@ build:
 	go build -ldflags "-X main.buildtime `date +%s`"
 
 format:
-	gofmt -s=true -w=true *.go
+	find . -name "*.go" -type f -exec gofmt -s=true -w=true {} \;
+	find . -name "*.go" -type f -exec goimports -w=true {} \;
 
 bench:
 	go test -bench .
