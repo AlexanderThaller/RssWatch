@@ -1,0 +1,30 @@
+{
+	"ImportPath": "github.com/AlexanderThaller/RssWatch",
+	"GoVersion": "go1.3",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/AlexanderThaller/logger",
+			"Comment": "1.1.0-6-g2f014ea",
+			"Rev": "2f014ea8b2a96158b0bd097b22b49d9235cee894"
+		},
+		{
+			"ImportPath": "github.com/AlexanderThaller/misc",
+			"Rev": "5bb154fe925c27124356a123a204198beed01a9c"
+		},
+		{
+			"ImportPath": "github.com/SlyMarbo/rss",
+			"Rev": "1905d0172ea2831d514584bfc6471c61df3cf247"
+		},
+		{
+			"ImportPath": "github.com/agl/xmpp",
+			"Rev": "c3b61187566b252cfb4e61b4cb23285c86044463"
+		},
+		{
+			"ImportPath": "github.com/axgle/mahonia",
+			"Rev": "5dd783869dfe0a7d5a3049b20b8ae1418c5dcc8a"
+		}
+	]
+}

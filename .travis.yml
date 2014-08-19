@@ -1,0 +1,13 @@
+language: go
+go:
+  - 1.2
+  - 1.3
+  - tip
+
+before_install:
+  - go get github.com/AlexanderThaller/godep
+  - go get github.com/AlexanderThaller/goimports
+  - go get github.com/AlexanderThaller/lint/golint
+  - export PATH=$HOME/gopath/bin:$PATH
+
+install: make dependencies_restore

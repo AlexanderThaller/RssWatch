@@ -4,10 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"github.com/AlexanderThaller/logger"
-	"github.com/AlexanderThaller/misc"
-	"github.com/SlyMarbo/rss"
-	"github.com/agl/xmpp"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -16,6 +12,11 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/AlexanderThaller/logger"
+	"github.com/AlexanderThaller/misc"
+	"github.com/SlyMarbo/rss"
+	"github.com/agl/xmpp"
 )
 
 const (
