@@ -1,6 +1,12 @@
 package main
 
-type config struct {
+import (
+	"github.com/AlexanderThaller/config"
+	"github.com/AlexanderThaller/logger"
+)
+
+type Config struct {
+	LogLevel        map[logger.Logger]string
 	DataFolder      string
 	Feeds           []Feed
 	SaveFeeds       bool
@@ -16,7 +22,10 @@ type config struct {
 	MailServer      string
 }
 
-func (co *config) Default() {
+func (co *Config) Default() {
+	co.LogLevel = make(map[logger.Logger]string)
+	co.LogLevel["."] = "Notice"
+
 	e := Feed{
 		Url:     "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom",
 		Filters: []string{".*Talk:.*"},
@@ -37,4 +46,27 @@ func (co *config) Default() {
 	co.MailDisable = true
 	co.MailDestination = "alexander@thaller.ws"
 	co.MailServer = "mail.thaller.ws:25"
+}
+
+// configure will parse the config file and return a new Config.
+func configure(path string) (conf *Config, err error) {
+	c := new(Config)
+	err = config.Configure(path, c)
+	if err != nil {
+		return
+	}
+
+	conf = c
+	return
+}
+
+// setup will prepare the environemt based on the values of the
+// given configuration.
+func setup(conf *Config) (err error) {
+	err = logger.ImportLoggers(conf.LogLevel)
+	if err != nil {
+		return
+	}
+
+	return
 }
