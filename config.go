@@ -1,11 +1,5 @@
 package main
 
-type Feed struct {
-	Url     string
-	Filters []string
-	Folder  string
-}
-
 type config struct {
 	DataFolder      string
 	Feeds           []Feed

@@ -46,8 +46,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	i := make(chan *Item, 50000)
-	o := make(chan *Item, 50000)
+	i := make(chan *item, 50000)
+	o := make(chan *item, 50000)
 
 	e = watchFeeds(i, c)
 	if e != nil {
@@ -76,7 +76,7 @@ func main() {
 	os.Exit(0)
 }
 
-type Item struct {
+type item struct {
 	Feed *rss.Feed
 	Item *rss.Item
 }
@@ -109,7 +109,7 @@ func configure(pa string) (con *config, err error) {
 	return
 }
 
-func watchFeeds(ch chan<- *Item, co *config) (err error) {
+func watchFeeds(ch chan<- *item, co *config) (err error) {
 	l := logger.New(name + ".watch.feeds")
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -133,7 +133,7 @@ func watchFeeds(ch chan<- *Item, co *config) (err error) {
 	return
 }
 
-func watchFeed(feed Feed, ch chan<- *Item, co *config) (err error) {
+func watchFeed(feed Feed, ch chan<- *item, co *config) (err error) {
 	l := logger.New(name + ".watch.feed." + feed.Url)
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -165,7 +165,7 @@ func watchFeed(feed Feed, ch chan<- *Item, co *config) (err error) {
 
 				l.Debug("New item: ", strings.TrimSpace(d.Title))
 				m[d.Link] = struct{}{}
-				ch <- &Item{
+				ch <- &item{
 					Feed: f,
 					Item: d,
 				}
@@ -243,7 +243,7 @@ func writeFeed(ma map[string]struct{}, ur *url.URL, co *config) (err error) {
 	return
 }
 
-func watchXMPP(ch <-chan *Item, co *config) (err error) {
+func watchXMPP(ch <-chan *item, co *config) (err error) {
 	l := logger.New(name + ".watch.xmpp")
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -304,7 +304,7 @@ func watchXMPP(ch <-chan *Item, co *config) (err error) {
 	return
 }
 
-func watchMail(ch <-chan *Item, co *config) (err error) {
+func watchMail(ch <-chan *item, co *config) (err error) {
 	l := logger.New(name + ".watch.mail")
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -358,12 +358,12 @@ func watchMail(ch <-chan *Item, co *config) (err error) {
 	return
 }
 
-func watchFilters(in <-chan *Item, ou chan<- *Item, filters []string) (err error) {
+func watchFilters(in <-chan *item, ou chan<- *item, filters []string) (err error) {
 	l := logger.New(name + ".watch.filters")
 	l.Info("Starting")
 	defer l.Info("Finished")
 
-	var c []chan<- *Item
+	var c []chan<- *item
 
 	for _, d := range filters {
 		f, e := watchFilter(d, ou)
@@ -391,7 +391,7 @@ func watchFilters(in <-chan *Item, ou chan<- *Item, filters []string) (err error
 	return
 }
 
-func watchFilter(fi string, ou chan<- *Item) (cin chan<- *Item, err error) {
+func watchFilter(fi string, ou chan<- *item) (cin chan<- *item, err error) {
 	l := logger.New(name + ".watch.filter.{{ " + fi + " }}")
 	l.Info("Starting")
 	defer l.Info("Finished")
@@ -400,7 +400,7 @@ func watchFilter(fi string, ou chan<- *Item) (cin chan<- *Item, err error) {
 	if err != nil {
 		return
 	}
-	c := make(chan *Item, 50000)
+	c := make(chan *item, 50000)
 
 	l.Info("Run loop")
 	go func() {
