@@ -71,12 +71,6 @@ func main() {
 		}
 	}
 
-	e = watchFilters(i, o, c)
-	if e != nil {
-		l.Alert("Problem when starting filters: ", e)
-		os.Exit(1)
-	}
-
 	misc.WaitForSigint()
 
 	os.Exit(0)
@@ -127,28 +121,27 @@ func watchFeeds(ch chan<- *Item, co *config) (err error) {
 	}
 
 	for _, d := range co.Feeds {
-		u, e := url.Parse(d)
+		e := watchFeed(d, ch, co)
 		if e != nil {
-			l.Warning("Can not parse feed url ", u, ": ", e)
+			l.Warning("Can not watch feed ", d, ": ", e)
 			continue
 		}
 
-		e = watchFeed(u, ch, co)
-		if e != nil {
-			l.Warning("Can not watch feed ", u, ": ", e)
-			continue
-		}
-
-		l.Notice("Watching " + d)
+		l.Notice("Watching " + d.Url)
 	}
 
 	return
 }
 
-func watchFeed(ur *url.URL, ch chan<- *Item, co *config) (err error) {
-	l := logger.New(name + ".watch.feed." + ur.Host + ur.Path)
+func watchFeed(feed Feed, ch chan<- *Item, co *config) (err error) {
+	l := logger.New(name + ".watch.feed." + feed.Url)
 	l.Info("Starting")
 	defer l.Info("Finished")
+
+	ur, err := url.Parse(feed.Url)
+	if err != nil {
+		return
+	}
 
 	f, err := rss.Fetch(ur.String())
 	if err != nil {
@@ -365,14 +358,14 @@ func watchMail(ch <-chan *Item, co *config) (err error) {
 	return
 }
 
-func watchFilters(in <-chan *Item, ou chan<- *Item, co *config) (err error) {
+func watchFilters(in <-chan *Item, ou chan<- *Item, filters []string) (err error) {
 	l := logger.New(name + ".watch.filters")
 	l.Info("Starting")
 	defer l.Info("Finished")
 
 	var c []chan<- *Item
 
-	for _, d := range co.Filters {
+	for _, d := range filters {
 		f, e := watchFilter(d, ou)
 
 		if e != nil {

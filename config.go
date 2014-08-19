@@ -1,9 +1,14 @@
 package main
 
+type Feed struct {
+	Url     string
+	Filters []string
+	Folder  string
+}
+
 type config struct {
 	DataFolder      string
-	Feeds           []string
-	Filters         []string
+	Feeds           []Feed
 	SaveFeeds       bool
 	XmppDisable     bool
 	XmppDestination string
@@ -18,11 +23,13 @@ type config struct {
 }
 
 func (co *config) Default() {
-	e := "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom"
-	co.Feeds = append(co.Feeds, e)
+	e := Feed{
+		Url:     "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom",
+		Filters: []string{".*Talk:.*"},
+		Folder:  "misc",
+	}
 
-	i := ".*Talk:.*"
-	co.Filters = append(co.Filters, i)
+	co.Feeds = append(co.Feeds, e)
 
 	co.DataFolder = "feeds"
 	co.SaveFeeds = true
