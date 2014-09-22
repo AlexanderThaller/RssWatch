@@ -37,14 +37,14 @@ func (co *Config) Default() {
 
 	co.DataFolder = "feeds"
 	co.SaveFeeds = true
-	co.XmppDisable = false
+	co.XmppDisable = true
 	co.XmppDestination = "admin@ejabberd"
 	co.XmppDomain = "ejabberd"
 	co.XmppPassword = "test"
 	co.XmppPort = 5222
 	co.XmppSkipTLS = true
 	co.XmppUsername = "test"
-	co.MailDisable = true
+	co.MailDisable = false
 	co.MailDestination = "alexander@thaller.ws"
 	co.MailServer = "mail.thaller.ws:25"
 	co.MailSender = "rsswatch@thaller.ws"
