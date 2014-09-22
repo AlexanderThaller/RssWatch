@@ -6,21 +6,21 @@ import (
 )
 
 type Config struct {
-	LogLevel        map[logger.Logger]string
 	DataFolder      string
 	Feeds           []Feed
+	LogLevel        map[logger.Logger]string
+	MailDestination string
+	MailDisable     bool
+	MailSender      string
+	MailServer      string
 	SaveFeeds       bool
-	XmppDisable     bool
 	XmppDestination string
+	XmppDisable     bool
 	XmppDomain      string
 	XmppPassword    string
 	XmppPort        uint16
 	XmppSkipTLS     bool
 	XmppUsername    string
-	MailDisable     bool
-	MailDestination string
-	MailServer      string
-	MailSender      string
 }
 
 func (co *Config) Default() {
