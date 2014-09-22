@@ -1,30 +1,38 @@
 {
 	"ImportPath": "github.com/AlexanderThaller/RssWatch",
-	"GoVersion": "go1.3",
+	"GoVersion": "go1.3.1",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
+		{
+			"ImportPath": "github.com/AlexanderThaller/config",
+			"Rev": "6a4c52e5f6710ab582643211e373cb0d138763d5"
+		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/logger",
 			"Comment": "1.1.0-6-g2f014ea",
 			"Rev": "2f014ea8b2a96158b0bd097b22b49d9235cee894"
 		},
 		{
-			"ImportPath": "github.com/AlexanderThaller/misc",
-			"Rev": "5bb154fe925c27124356a123a204198beed01a9c"
+			"ImportPath": "github.com/AlexanderThaller/service",
+			"Rev": "85939145664a6f930552a22ed2ef44a79fc43ff9"
 		},
 		{
 			"ImportPath": "github.com/SlyMarbo/rss",
 			"Rev": "1905d0172ea2831d514584bfc6471c61df3cf247"
 		},
 		{
-			"ImportPath": "github.com/agl/xmpp",
-			"Rev": "c3b61187566b252cfb4e61b4cb23285c86044463"
+			"ImportPath": "github.com/juju/errgo",
+			"Rev": "26caa7d4884f6048c5687fa44c410e5d5d95e554"
 		},
 		{
-			"ImportPath": "github.com/axgle/mahonia",
-			"Rev": "5dd783869dfe0a7d5a3049b20b8ae1418c5dcc8a"
+			"ImportPath": "github.com/vmihailenco/bufio",
+			"Rev": "24e7e48f60fc2d9e99e43c07485d9fff42051e66"
+		},
+		{
+			"ImportPath": "github.com/vmihailenco/msgpack",
+			"Rev": "20c1b88a6c7fc5432037439f4e8c582e236fb205"
 		}
 	]
 }
