@@ -1,5 +1,19 @@
 package main
 
+import (
+	"io/ioutil"
+	"math/rand"
+	"os"
+	"path/filepath"
+	"strings"
+	"time"
+
+	"github.com/AlexanderThaller/logger"
+	"github.com/SlyMarbo/rss"
+	"github.com/juju/errgo"
+	"github.com/vmihailenco/msgpack"
+)
+
 type Feed struct {
 	Url     string
 	Filters []string
@@ -19,25 +33,38 @@ func (feed *Feed) Launch(conf *Config) {
 	l.Debug("Got feed")
 	l.Trace("Feed data: ", data)
 
-	items := data.ItemMap
+	go feed.Watch(data, conf)
+}
+
+func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
+	l := logger.New(name, "Feed", "Watch", feed.Url)
+
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for {
+		d := time.Duration(r.Intn(60000)) * time.Millisecond
+		l.Debug("Sleep for ", d)
+		time.Sleep(d)
+
+		l.Debug("Try to update feed")
 		updated, err := feed.Update(data)
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
 		}
 
 		if updated {
-			newitems := feed.Check(data.Items, items)
-			filtered := feed.Filter(newitems)
-
-			for _, item := range filtered {
-				go item.Send(conf)
+			l.Debug("Updated feed will now try to save")
+			err = feed.Save(data, conf.DataFolder)
+			if err != nil {
+				l.Error("Problem while saving: ", errgo.Details(err))
+				return
 			}
-
-			items = data.ItemMap
+		} else {
+			l.Debug("Not updated")
 		}
 
-		time.Sleep(5 * time.Minute)
+		d = 5 * time.Minute
+		l.Debug("Sleep for ", d)
+		time.Sleep(d)
 	}
 }
 
@@ -134,6 +161,7 @@ func (feed *Feed) Update(data *rss.Feed) (bool, error) {
 	l.Trace("Refresh: ", data.Refresh)
 	l.Trace("After: ", data.Refresh.After(time.Now()))
 	if data.Refresh.After(time.Now()) {
+		l.Debug("Its not time to update yet")
 		return false, nil
 	}
 	l.Debug("Will update feed")
