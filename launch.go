@@ -13,10 +13,15 @@ import (
 // launch will start the appliaction based on the given configuration.
 func launch(conf *Config) (err error) {
 	l := logger.New(name, "launch")
+	l.Debug("Starting")
 
+	l.Trace("Creating feedItems channel")
 	feedsItems := make(chan *Item, 50000)
+
+	l.Trace("Creating feeds")
 	feeds := NewFeeds()
 	if conf.SaveFeeds {
+		l.Trace("Creating feeds folder for path ", conf.DataFolder)
 		err = os.MkdirAll(conf.DataFolder, 0755)
 		if err != nil {
 			return

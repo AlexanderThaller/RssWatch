@@ -102,6 +102,10 @@ func (feed *Feed) Watch(output chan<- *Item) error {
 
 	go func() {
 		for {
+			l.Debug("Feed: ", feed)
+			l.Trace("Feed.Feed: ", feed)
+			l.Trace("Feed.Feed.Refresh: ", feed.feed.Refresh)
+
 			l.Info("Sleep until ", feed.feed.Refresh, "(", feed.feed.Refresh.Sub(time.Now()), ")")
 			sleepToTime(feed.feed.Refresh)
 
