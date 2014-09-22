@@ -17,7 +17,7 @@ func launch(conf *Config) (err error) {
 	l := logger.New(name, "launch")
 
 	for _, d := range conf.Feeds {
-		go launchFeed(d.Url, d.Folder, d.Filters, conf)
+		go feedLaunch(d.Url, d.Folder, d.Filters, conf)
 	}
 
 	l.Trace("Watching for signals")
@@ -25,31 +25,37 @@ func launch(conf *Config) (err error) {
 	return nil
 }
 
-func launchFeed(url, folder string, filters []string, conf *Config) {
-	l := logger.New(name, "launch", "Feed", url)
-	l.Trace("Starting")
+func feedLaunch(url, folder string, filters []string, conf *Config) {
+	l := logger.New(name, "feed", "Launch", url)
+	l.Info("Starting")
 
-	feed, err := getFeed(url, conf)
+	feed, err := feedGet(url, conf)
 	if err != nil {
 		l.Error("Problem when getting feed: ", errgo.Details(err))
 		return
 	}
-	l.Trace("Feed: ", feed)
+	l.Debug("Got feed")
+	l.Trace("Feed data: ", feed)
 }
 
-func getFeed(url string, conf *Config) (*rss.Feed, error) {
-	l := logger.New(name, "getFeed", url)
+func feedGet(url string, conf *Config) (*rss.Feed, error) {
+	l := logger.New(name, "feed", "Get", url)
 
 	if conf.SaveFeeds {
 		l.Debug("Will try to restore feed")
 
-		feed, err := restoreFeed(conf.DataFolder, url)
+		feed, err := feedRestore(conf.DataFolder, url)
 		if err == nil {
 			l.Debug("Restored feed. Will return feed")
 			return feed, nil
 		}
 
 		l.Debug("Can not restore feed")
+		if !os.IsNotExist(err) {
+			l.Debug("Error is not a not exists error we will return this")
+			return nil, err
+		}
+
 		l.Trace("Error while restoring: ", err)
 	}
 
@@ -62,7 +68,7 @@ func getFeed(url string, conf *Config) (*rss.Feed, error) {
 
 	if conf.SaveFeeds {
 		l.Debug("Will try to save feed")
-		err = saveFeed(feed, conf.DataFolder, url)
+		err = feedSave(feed, conf.DataFolder, url)
 		if err != nil {
 			return feed, err
 		}
@@ -72,7 +78,7 @@ func getFeed(url string, conf *Config) (*rss.Feed, error) {
 	return feed, err
 }
 
-func restoreFeed(datafolder, url string) (*rss.Feed, error) {
+func feedRestore(datafolder, url string) (*rss.Feed, error) {
 	filename := feedFilename(datafolder, url) + ".msgpack"
 	_, err := os.Stat(filename)
 	if err != nil {
@@ -93,7 +99,7 @@ func restoreFeed(datafolder, url string) (*rss.Feed, error) {
 	return &feed, nil
 }
 
-func saveFeed(feed *rss.Feed, datafolder, url string) error {
+func feedSave(feed *rss.Feed, datafolder, url string) error {
 	filename := feedFilename(datafolder, url) + ".msgpack"
 
 	err := os.MkdirAll(datafolder, 0755)
