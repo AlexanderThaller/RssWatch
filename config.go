@@ -20,6 +20,7 @@ type Config struct {
 	MailDisable     bool
 	MailDestination string
 	MailServer      string
+	MailSender      string
 }
 
 func (co *Config) Default() {
@@ -46,6 +47,7 @@ func (co *Config) Default() {
 	co.MailDisable = true
 	co.MailDestination = "alexander@thaller.ws"
 	co.MailServer = "mail.thaller.ws:25"
+	co.MailSender = "rsswatch@thaller.ws"
 }
 
 // configure will parse the config file and return a new Config.
