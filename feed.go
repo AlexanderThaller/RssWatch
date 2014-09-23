@@ -85,6 +85,7 @@ func (feed *Feed) Check(newitems []*rss.Item, items map[string]struct{}) []*rss.
 
 	for _, d := range newitems {
 		l.Trace("Checking item: ", d)
+		l.Debug("Checking item: ", d.Title)
 
 		if _, exists := items[d.ID]; !exists {
 			l.Trace("New item: ", d)
