@@ -9,7 +9,7 @@ func launch(conf *Config) (err error) {
 	l := logger.New(name, "launch")
 
 	for _, d := range conf.Feeds {
-		d.Launch(conf)
+		go d.Launch(conf)
 	}
 
 	l.Trace("Watching for signals")

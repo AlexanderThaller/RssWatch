@@ -20,7 +20,7 @@ type Feed struct {
 	Folder  string
 }
 
-func (feed *Feed) Launch(conf *Config) {
+func (feed Feed) Launch(conf *Config) {
 	l := logger.New(name, "Feed", "Launch", feed.Url)
 	l.Info("Starting")
 
@@ -33,7 +33,7 @@ func (feed *Feed) Launch(conf *Config) {
 	l.Debug("Got feed")
 	l.Trace("Feed data: ", data)
 
-	go feed.Watch(data, conf)
+	feed.Watch(data, conf)
 }
 
 func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
