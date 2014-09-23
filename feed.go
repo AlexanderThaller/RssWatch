@@ -62,7 +62,7 @@ func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 			l.Debug("Not updated")
 		}
 
-		d = 5 * time.Minute
+		d = data.Refresh.Sub(time.Now())
 		l.Debug("Sleep for ", d)
 		time.Sleep(d)
 	}
