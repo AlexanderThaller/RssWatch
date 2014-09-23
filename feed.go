@@ -41,6 +41,8 @@ func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for {
+		items := data.ItemMap
+
 		d := time.Duration(r.Intn(50000)+10000) * time.Millisecond
 		l.Debug("Sleep for ", d)
 		time.Sleep(d)
@@ -52,6 +54,9 @@ func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 		}
 
 		if updated {
+			l.Debug("Checking for new items")
+			feed.Check(data.Items, items)
+
 			l.Debug("Updated feed will now try to save")
 			err = feed.Save(data, conf.DataFolder)
 			if err != nil {
@@ -74,10 +79,16 @@ func (feed *Feed) Filter(items []*rss.Item) []*Item {
 }
 
 func (feed *Feed) Check(newitems []*rss.Item, items map[string]struct{}) []*rss.Item {
+	l := logger.New(name, "Feed", "Check", feed.Url)
+
 	var out []*rss.Item
 
 	for _, d := range newitems {
-		if _, exists := items[d.ID]; exists {
+		l.Trace("Checking item: ", d)
+
+		if _, exists := items[d.ID]; !exists {
+			l.Trace("New item: ", d)
+			l.Debug("New item: ", d.Title)
 			out = append(out, d)
 		}
 	}
