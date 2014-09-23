@@ -4,7 +4,7 @@ all:
 	make format
 	make style
 	make test
-	make build
+	make build_race
 
 format:
 	find . -name "*.go" -not -path './Godeps/*' -type f -exec gofmt -s=true -w=true {} \;
@@ -18,6 +18,9 @@ test:
 
 build:
 	go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`"
+
+build_race:
+	go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -race
 
 clean:
 	rm -f "$(NAME)"
