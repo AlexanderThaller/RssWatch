@@ -179,21 +179,32 @@ func (feed *Feed) Update(data *rss.Feed) (bool, error) {
 func (feed *Feed) Save(data *rss.Feed, datafolder string) error {
 	l := logger.New(name, "Feed", "Save", feed.Url)
 
-	l.Debug("Will try to save feed")
+	l.Debug("Getting filename for file")
 	filename := feed.Filename(datafolder) + ".msgpack"
+	l.Trace("Filename: ", filename)
 
+	l.Debug("Creating folder for file")
 	err := os.MkdirAll(datafolder, 0755)
 	if err != nil {
 		return err
 	}
+	l.Debug("Created folder for file")
 
+	l.Debug("Marshaling feed data to msgpack")
 	bytes, err := msgpack.Marshal(data)
+	if err != nil {
+		return err
+	}
+	l.Debug("Finished marshalling")
+
+	l.Debug("Will now try to save the marshaled feed to the file")
 	err = ioutil.WriteFile(filename, bytes, 0644)
 	if err != nil {
 		return err
 	}
+	l.Debug("Finished saving to file")
 
-	l.Debug("Saved feed")
+	l.Debug("Finished saving the feed")
 	return nil
 }
 
