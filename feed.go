@@ -41,7 +41,7 @@ func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for {
-		d := time.Duration(r.Intn(60000)) * time.Millisecond
+		d := time.Duration(r.Intn(50000)+10000) * time.Millisecond
 		l.Debug("Sleep for ", d)
 		time.Sleep(d)
 
