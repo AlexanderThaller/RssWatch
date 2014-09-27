@@ -22,5 +22,5 @@ _testmain.go
 *.exe
 
 RssWatch
-RssWatch.cnf
+RssWatch.cnf*
 feeds/

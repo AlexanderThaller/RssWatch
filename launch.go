@@ -5,11 +5,14 @@ import (
 	"github.com/AlexanderThaller/service"
 )
 
-func launch(conf *Config) (err error) {
+func launch(conf *Config) error {
 	l := logger.New(name, "launch")
 
 	for _, d := range conf.Feeds {
-		go d.Launch(conf)
+		err := d.Launch(conf)
+		if err != nil {
+			return err
+		}
 	}
 
 	l.Trace("Watching for signals")

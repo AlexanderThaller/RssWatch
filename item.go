@@ -1,16 +1,8 @@
 package main
 
-import "time"
+import "github.com/SlyMarbo/rss"
 
 type Item struct {
-	Feed    string
-	Filter  string
-	Title   string
-	Content string
-	Link    string
-	Date    time.Time
-}
-
-func (item *Item) Send(conf *Config) {
-	return
+	Filter string
+	Data   *rss.Item
 }

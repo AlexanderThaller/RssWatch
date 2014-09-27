@@ -2,9 +2,9 @@ package main
 
 import (
 	"io/ioutil"
-	"math/rand"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -18,83 +18,129 @@ type Feed struct {
 	Url     string
 	Filters []string
 	Folder  string
+	filters map[string]*regexp.Regexp
 }
 
-func (feed Feed) Launch(conf *Config) {
+func (feed Feed) Launch(conf *Config) error {
 	l := logger.New(name, "Feed", "Launch", feed.Url)
 	l.Info("Starting")
+
+	l.Debug("Setting up filters")
+	feed.filters = make(map[string]*regexp.Regexp)
+	for _, filter := range feed.Filters {
+		compiled, err := regexp.Compile(filter)
+		if err != nil {
+			return err
+		}
+
+		feed.filters[filter] = compiled
+	}
 
 	l.Debug("Will try to get feed")
 	data, err := feed.Get(conf)
 	if err != nil {
-		l.Error("Problem when getting feed: ", errgo.Details(err))
-		return
+		return err
 	}
 	l.Debug("Got feed")
 	l.Trace("Feed data: ", data)
 
-	feed.Watch(data, conf)
+	go feed.Watch(data, conf)
+
+	return nil
 }
 
 func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for {
-		items := data.ItemMap
-
-		d := time.Duration(r.Intn(50000)+10000) * time.Millisecond
-		l.Debug("Sleep for ", d)
+		d := data.Refresh.Sub(time.Now())
+		l.Debug("Sleep for ", d, " (Until ", data.Refresh, ")")
 		time.Sleep(d)
 
+		items := make(map[string]struct{})
+		for item := range data.ItemMap {
+			items[item] = struct{}{}
+		}
+
+		l.Trace("Items length: ", len(items))
 		l.Debug("Try to update feed")
-		updated, err := feed.Update(data)
+		updated, err := data.Update()
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
 		}
+		l.Trace("Data ItemMap length: ", len(data.ItemMap))
 
-		if updated {
-			l.Debug("Checking for new items")
-			feed.Check(data.Items, items)
-
-			l.Debug("Updated feed will now try to save")
-			err = feed.Save(data, conf.DataFolder)
-			if err != nil {
-				l.Error("Problem while saving: ", errgo.Details(err))
-				return
-			}
-		} else {
+		if !updated {
 			l.Debug("Not updated")
+			continue
 		}
 
-		d = data.Refresh.Sub(time.Now())
-		l.Debug("Sleep for ", d)
-		time.Sleep(d)
+		l.Debug("Checking for new items")
+		feed.Check(data.Items, items)
+
+		l.Debug("Updated feed will now try to save")
+		err = feed.Save(data, conf.DataFolder)
+		if err != nil {
+			l.Error("Problem while saving: ", errgo.Details(err))
+			return
+		}
 	}
 }
 
-func (feed *Feed) Filter(items []*rss.Item) []*Item {
+func (feed *Feed) Send(item *rss.Item) {
+	l := logger.New(name, "Feed", "Send", feed.Url)
+	l.Trace("Sending item: ", item)
+
+	filtered := feed.Filter(item)
+	for _, item := range filtered {
+		l.Debug("Sending filtered item: ", item.Data.ID)
+		l.Trace("Sending filtered item: ", item)
+	}
+}
+
+func (feed *Feed) Filter(item *rss.Item) []*Item {
+	l := logger.New(name, "Feed", "Filter", feed.Url, item.ID)
+	l.Trace("Item: ", item)
+	l.Debug("Checking filter for ", item.Title)
+
 	var out []*Item
+	for filter, compiled := range feed.filters {
+		l.Debug("Checking filter: ", filter)
+
+		matches := compiled.MatchString(item.Title)
+		if !matches {
+			l.Debug("Item does not match")
+			continue
+		}
+		l.Debug("Item matches filter adding to output")
+
+		newitem := Item{
+			Filter: filter,
+			Data:   item,
+		}
+
+		l.Trace("Newitem: ", newitem)
+		out = append(out, &newitem)
+	}
+
+	l.Trace(out)
 	return out
 }
 
-func (feed *Feed) Check(newitems []*rss.Item, items map[string]struct{}) []*rss.Item {
+func (feed *Feed) Check(newitems []*rss.Item, items map[string]struct{}) {
 	l := logger.New(name, "Feed", "Check", feed.Url)
 
-	var out []*rss.Item
+	l.Trace("Items: ", items)
+	for _, item := range newitems {
+		l.Trace("Item id: ", item.ID)
+		_, exists := items[item.ID]
 
-	for _, d := range newitems {
-		l.Trace("Checking item: ", d)
-		l.Debug("Checking item: ", d.Title)
-
-		if _, exists := items[d.ID]; !exists {
-			l.Trace("New item: ", d)
-			l.Debug("New item: ", d.Title)
-			out = append(out, d)
+		l.Trace("Exists: ", exists)
+		if !exists {
+			l.Trace("New item: ", item)
+			go feed.Send(item)
 		}
 	}
-
-	return out
 }
 
 func (feed *Feed) Get(conf *Config) (*rss.Feed, error) {
@@ -132,6 +178,10 @@ func (feed *Feed) Get(conf *Config) (*rss.Feed, error) {
 		}
 	}
 
+	for _, item := range data.Items {
+		go feed.Send(item)
+	}
+
 	return data, err
 }
 
@@ -165,27 +215,6 @@ func (feed *Feed) Restore(datafolder string) (*rss.Feed, error) {
 	l.Debug("Finished restoring")
 	l.Trace("Data: ", data)
 	return &data, nil
-}
-
-func (feed *Feed) Update(data *rss.Feed) (bool, error) {
-	l := logger.New(name, "Feed", "Update", feed.Url)
-
-	l.Trace("Refresh: ", data.Refresh)
-	l.Trace("After: ", data.Refresh.After(time.Now()))
-	if data.Refresh.After(time.Now()) {
-		l.Debug("Its not time to update yet")
-		return false, nil
-	}
-	l.Debug("Will update feed")
-
-	err := data.Update()
-	if err != nil {
-		return false, err
-	}
-	l.Debug("Updated feed")
-	l.Trace("New refresh: ", data.Refresh)
-
-	return true, nil
 }
 
 func (feed *Feed) Save(data *rss.Feed, datafolder string) error {

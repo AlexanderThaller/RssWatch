@@ -4,7 +4,7 @@ all:
 	make format
 	make style
 	make test
-	make build_race
+	make build
 
 format:
 	find . -name "*.go" -not -path './Godeps/*' -type f -exec gofmt -s=true -w=true {} \;
