@@ -137,11 +137,11 @@ func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
 
 	buffer.WriteString("\n\n")
 
-	buffer.WriteString(ftitle + " - " + ititle + "\n")
+	buffer.WriteString(ftitle + " - " + ititle + "<br>\n")
 	buffer.WriteString(item.data.Content)
 
-	buffer.WriteString("\n\n")
-	buffer.WriteString(item.data.Link)
+	buffer.WriteString("<br>\n")
+	buffer.WriteString(`<a href="` + item.data.Link + `">Link</a>`)
 
 	return buffer, nil
 }
