@@ -44,26 +44,25 @@ func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 	}
 
 	l.Debug("Will try to get feed")
-	data, err := feed.Get(conf)
+	err := feed.Get(conf)
 	if err != nil {
 		return err
 	}
 	l.Debug("Got feed")
-	l.Trace("Feed data: ", data)
-
-	feed.data = data
 
 	go feed.Watch()
 
 	return nil
 }
 
-func (feed *Feed) Watch() {
+func (feed Feed) Watch() {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
 
 	for {
-		d := feed.data.Refresh.Sub(time.Now())
-		l.Debug("Sleep for ", d, " (Until ", feed.data.Refresh, ")")
+		refresh := feed.data.Refresh
+
+		d := refresh.Sub(time.Now())
+		l.Debug("Sleep for ", d, " (Until ", refresh, ")")
 		time.Sleep(d)
 
 		items := make(map[string]struct{})
@@ -77,7 +76,6 @@ func (feed *Feed) Watch() {
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
 		}
-		l.Trace("Data ItemMap length: ", len(feed.data.ItemMap))
 
 		if !updated {
 			l.Debug("Not updated")
@@ -85,7 +83,7 @@ func (feed *Feed) Watch() {
 		}
 
 		l.Debug("Checking for new items")
-		go feed.Check(items)
+		feed.Check(items)
 
 		l.Debug("Updated feed will now try to save")
 		err = feed.Save(feed.data, feed.config.DataFolder)
@@ -102,7 +100,11 @@ func (feed *Feed) Send(item *rss.Item) {
 
 	filtered := feed.Filter(item)
 	for _, item := range filtered {
-		message := feed.GenerateMessage(item)
+		message, err := feed.GenerateMessage(item)
+		if err != nil {
+			l.Warning("Can not generate message: ", err)
+			continue
+		}
 		l.Trace("Message: ", message.String())
 
 		l.Debug("Sending email for filter ", item.Filter)
@@ -111,9 +113,15 @@ func (feed *Feed) Send(item *rss.Item) {
 	}
 }
 
-func (feed *Feed) GenerateMessage(item *Item) *bytes.Buffer {
+func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
+	l := logger.New(name, "Feed", "Generate", "Message", item.data.ID)
+	l.SetLevel(logger.Debug)
+
 	buffer := bytes.NewBufferString("")
 
+	if feed.data == nil {
+		return nil, errgo.New("feed data can not be nil")
+	}
 	ftitle := strings.TrimSpace(feed.data.Title)
 	ititle := strings.TrimSpace(item.data.Title)
 	sender := feed.config.MailSender
@@ -137,7 +145,7 @@ func (feed *Feed) GenerateMessage(item *Item) *bytes.Buffer {
 	buffer.WriteString("\n\n")
 	buffer.WriteString(item.data.Link)
 
-	return buffer
+	return buffer, nil
 }
 
 func (feed *Feed) Filter(item *rss.Item) []*Item {
@@ -181,12 +189,12 @@ func (feed *Feed) Check(items map[string]struct{}) {
 		l.Trace("Exists: ", exists)
 		if !exists {
 			l.Trace("New item: ", item)
-			go feed.Send(item)
+			feed.Send(item)
 		}
 	}
 }
 
-func (feed *Feed) Get(conf *Config) (*rss.Feed, error) {
+func (feed *Feed) Get(conf *Config) error {
 	l := logger.New(name, "Feed", "Get", feed.Url)
 
 	if conf.SaveFeeds {
@@ -195,13 +203,14 @@ func (feed *Feed) Get(conf *Config) (*rss.Feed, error) {
 		data, err := feed.Restore(conf.DataFolder)
 		if err == nil {
 			l.Debug("Restored feed. Will return feed")
-			return data, nil
+			return nil
 		}
+		feed.data = data
 
 		l.Debug("Can not restore feed")
 		if !os.IsNotExist(err) {
 			l.Debug("Error is not a not exists error we will return this")
-			return nil, err
+			return err
 		}
 
 		l.Trace("Error while restoring: ", err)
@@ -210,22 +219,23 @@ func (feed *Feed) Get(conf *Config) (*rss.Feed, error) {
 	l.Debug("Will try to fetch feed")
 	data, err := rss.Fetch(feed.Url)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	l.Debug("Fetched feed")
+	feed.data = data
+
+	for _, item := range data.Items {
+		feed.Send(item)
+	}
 
 	if conf.SaveFeeds {
 		err = feed.Save(data, conf.DataFolder)
 		if err != nil {
-			return data, err
+			return err
 		}
 	}
 
-	for _, item := range data.Items {
-		go feed.Send(item)
-	}
-
-	return data, err
+	return err
 }
 
 func (feed *Feed) Restore(datafolder string) (*rss.Feed, error) {
