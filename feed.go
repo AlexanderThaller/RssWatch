@@ -43,13 +43,6 @@ func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 		feed.filters[filter] = compiled
 	}
 
-	l.Debug("Will try to get feed")
-	err := feed.Get(conf)
-	if err != nil {
-		return err
-	}
-	l.Debug("Got feed")
-
 	go feed.Watch()
 
 	return nil
@@ -57,6 +50,14 @@ func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 
 func (feed Feed) Watch() {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
+
+	l.Debug("Will try to get feed")
+	err := feed.Get(feed.config)
+	if err != nil {
+		l.Error("can not get feed data")
+		return
+	}
+	l.Debug("Got feed")
 
 	for {
 		refresh := feed.data.Refresh
@@ -86,7 +87,7 @@ func (feed Feed) Watch() {
 		feed.Check(items)
 
 		l.Debug("Updated feed will now try to save")
-		err = feed.Save(feed.data, feed.config.DataFolder)
+		err = feed.Save(feed.config.DataFolder)
 		if err != nil {
 			l.Error("Problem while saving: ", errgo.Details(err))
 			return
@@ -119,9 +120,6 @@ func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
 
 	buffer := bytes.NewBufferString("")
 
-	if feed.data == nil {
-		return nil, errgo.New("feed data can not be nil")
-	}
 	ftitle := strings.TrimSpace(feed.data.Title)
 	ititle := strings.TrimSpace(item.data.Title)
 	sender := feed.config.MailSender
@@ -200,12 +198,11 @@ func (feed *Feed) Get(conf *Config) error {
 	if conf.SaveFeeds {
 		l.Debug("Will try to restore feed")
 
-		data, err := feed.Restore(conf.DataFolder)
+		err := feed.Restore(conf.DataFolder)
 		if err == nil {
 			l.Debug("Restored feed. Will return feed")
 			return nil
 		}
-		feed.data = data
 
 		l.Debug("Can not restore feed")
 		if !os.IsNotExist(err) {
@@ -229,7 +226,7 @@ func (feed *Feed) Get(conf *Config) error {
 	}
 
 	if conf.SaveFeeds {
-		err = feed.Save(data, conf.DataFolder)
+		err = feed.Save(conf.DataFolder)
 		if err != nil {
 			return err
 		}
@@ -238,7 +235,7 @@ func (feed *Feed) Get(conf *Config) error {
 	return err
 }
 
-func (feed *Feed) Restore(datafolder string) (*rss.Feed, error) {
+func (feed *Feed) Restore(datafolder string) error {
 	l := logger.New(name, "Feed", "Restore", feed.Url)
 
 	filename := feed.Filename(datafolder) + ".msgpack"
@@ -247,14 +244,14 @@ func (feed *Feed) Restore(datafolder string) (*rss.Feed, error) {
 	l.Debug("Check if file exists")
 	_, err := os.Stat(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	l.Debug("File does exist")
 
 	l.Debug("Read from file")
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	l.Debug("Finished reading file")
 
@@ -262,15 +259,17 @@ func (feed *Feed) Restore(datafolder string) (*rss.Feed, error) {
 	l.Debug("Unmarshal bytes from file")
 	err = msgpack.Unmarshal(bytes, &data)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	l.Debug("Finished unmarshaling")
 	l.Debug("Finished restoring")
 	l.Trace("Data: ", data)
-	return &data, nil
+	feed.data = &data
+
+	return nil
 }
 
-func (feed *Feed) Save(data *rss.Feed, datafolder string) error {
+func (feed *Feed) Save(datafolder string) error {
 	l := logger.New(name, "Feed", "Save", feed.Url)
 
 	l.Debug("Getting filename for file")
@@ -285,7 +284,7 @@ func (feed *Feed) Save(data *rss.Feed, datafolder string) error {
 	l.Debug("Created folder for file")
 
 	l.Debug("Marshaling feed data to msgpack")
-	bytes, err := msgpack.Marshal(data)
+	bytes, err := msgpack.Marshal(feed.data)
 	if err != nil {
 		return err
 	}
