@@ -121,6 +121,7 @@ func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
 	buffer := bytes.NewBufferString("")
 
 	ftitle := strings.TrimSpace(feed.data.Title)
+	ftitle = strings.Replace(ftitle, ".", "_", -1)
 	ititle := strings.TrimSpace(item.data.Title)
 	sender := feed.config.MailSender
 
