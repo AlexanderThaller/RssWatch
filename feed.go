@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,11 +20,17 @@ type Feed struct {
 	Filters []string
 	Folder  string
 	filters map[string]*regexp.Regexp
+	data    *rss.Feed
+	config  *Config
+	mails   chan<- *bytes.Buffer
 }
 
-func (feed Feed) Launch(conf *Config) error {
+func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 	l := logger.New(name, "Feed", "Launch", feed.Url)
 	l.Info("Starting")
+
+	feed.config = conf
+	feed.mails = mails
 
 	l.Debug("Setting up filters")
 	feed.filters = make(map[string]*regexp.Regexp)
@@ -44,31 +51,33 @@ func (feed Feed) Launch(conf *Config) error {
 	l.Debug("Got feed")
 	l.Trace("Feed data: ", data)
 
-	go feed.Watch(data, conf)
+	feed.data = data
+
+	go feed.Watch()
 
 	return nil
 }
 
-func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
+func (feed *Feed) Watch() {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
 
 	for {
-		d := data.Refresh.Sub(time.Now())
-		l.Debug("Sleep for ", d, " (Until ", data.Refresh, ")")
+		d := feed.data.Refresh.Sub(time.Now())
+		l.Debug("Sleep for ", d, " (Until ", feed.data.Refresh, ")")
 		time.Sleep(d)
 
 		items := make(map[string]struct{})
-		for item := range data.ItemMap {
+		for item := range feed.data.ItemMap {
 			items[item] = struct{}{}
 		}
 
 		l.Trace("Items length: ", len(items))
 		l.Debug("Try to update feed")
-		updated, err := data.Update()
+		updated, err := feed.data.Update()
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
 		}
-		l.Trace("Data ItemMap length: ", len(data.ItemMap))
+		l.Trace("Data ItemMap length: ", len(feed.data.ItemMap))
 
 		if !updated {
 			l.Debug("Not updated")
@@ -76,10 +85,10 @@ func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 		}
 
 		l.Debug("Checking for new items")
-		feed.Check(data.Items, items)
+		go feed.Check(items)
 
 		l.Debug("Updated feed will now try to save")
-		err = feed.Save(data, conf.DataFolder)
+		err = feed.Save(feed.data, feed.config.DataFolder)
 		if err != nil {
 			l.Error("Problem while saving: ", errgo.Details(err))
 			return
@@ -88,14 +97,47 @@ func (feed *Feed) Watch(data *rss.Feed, conf *Config) {
 }
 
 func (feed *Feed) Send(item *rss.Item) {
-	l := logger.New(name, "Feed", "Send", feed.Url)
+	l := logger.New(name, "Feed", "Send", feed.Url, item.ID)
 	l.Trace("Sending item: ", item)
 
 	filtered := feed.Filter(item)
 	for _, item := range filtered {
-		l.Debug("Sending filtered item: ", item.Data.ID)
-		l.Trace("Sending filtered item: ", item)
+		message := feed.GenerateMessage(item)
+		l.Trace("Message: ", message.String())
+
+		l.Debug("Sending email for filter ", item.Filter)
+		feed.mails <- message
+		l.Debug("Sent mail")
 	}
+}
+
+func (feed *Feed) GenerateMessage(item *Item) *bytes.Buffer {
+	buffer := bytes.NewBufferString("")
+
+	ftitle := strings.TrimSpace(feed.data.Title)
+	ititle := strings.TrimSpace(item.data.Title)
+	sender := feed.config.MailSender
+
+	buffer.WriteString("From: " + sender + "\n")
+	buffer.WriteString("Subject: " + ititle + "\n")
+	buffer.WriteString("Content-Type: text/html; charset=utf-8\n")
+	buffer.WriteString("Feed: " + ftitle + "\n")
+	buffer.WriteString("Folder: " + feed.Folder + "\n")
+
+	ifilter := strings.Replace(item.Filter, ".", `_`, -1)
+	if ifilter != "_*" {
+		buffer.WriteString("Filter: " + ifilter + "\n")
+	}
+
+	buffer.WriteString("\n\n")
+
+	buffer.WriteString(ftitle + " - " + ititle + "\n")
+	buffer.WriteString(item.data.Content)
+
+	buffer.WriteString("\n\n")
+	buffer.WriteString(item.data.Link)
+
+	return buffer
 }
 
 func (feed *Feed) Filter(item *rss.Item) []*Item {
@@ -116,7 +158,7 @@ func (feed *Feed) Filter(item *rss.Item) []*Item {
 
 		newitem := Item{
 			Filter: filter,
-			Data:   item,
+			data:   item,
 		}
 
 		l.Trace("Newitem: ", newitem)
@@ -127,9 +169,10 @@ func (feed *Feed) Filter(item *rss.Item) []*Item {
 	return out
 }
 
-func (feed *Feed) Check(newitems []*rss.Item, items map[string]struct{}) {
+func (feed *Feed) Check(items map[string]struct{}) {
 	l := logger.New(name, "Feed", "Check", feed.Url)
 
+	newitems := feed.data.Items
 	l.Trace("Items: ", items)
 	for _, item := range newitems {
 		l.Trace("Item id: ", item.ID)
