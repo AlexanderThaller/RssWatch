@@ -20,7 +20,11 @@
 		},
 		{
 			"ImportPath": "github.com/SlyMarbo/rss",
-			"Rev": "1905d0172ea2831d514584bfc6471c61df3cf247"
+			"Rev": "039341040095109541411dc2ee30f6ed431b4156"
+		},
+		{
+			"ImportPath": "github.com/axgle/mahonia",
+			"Rev": "5dd783869dfe0a7d5a3049b20b8ae1418c5dcc8a"
 		},
 		{
 			"ImportPath": "github.com/juju/errgo",

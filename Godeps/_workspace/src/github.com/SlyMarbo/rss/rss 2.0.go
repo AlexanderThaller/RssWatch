@@ -131,7 +131,7 @@ type rss2_0Item struct {
 	Title   string   `xml:"title"`
 	Content string   `xml:"description"`
 	Link    string   `xml:"link"`
-	PubDate    string   `xml:"pubDate"`
+	PubDate string   `xml:"pubDate"`
 	Date    string   `xml:"date"`
 	ID      string   `xml:"guid"`
 }

@@ -74,28 +74,28 @@ func FetchByFunc(fetchFunc FetchFunc, url string) (*Feed, error) {
 
 // Feed is the top-level structure.
 type Feed struct {
-	Nickname    string
+	Nickname    string // This is not set by the package, but could be helpful.
 	Title       string
 	Description string
-	Link        string
-	UpdateURL   string
-	Image       *Image
+	Link        string // Link to the creator's website.
+	UpdateURL   string // URL of the feed itself.
+	Image       *Image // Feed icon.
 	Items       []*Item
-	ItemMap     map[string]struct{}
-	Refresh     time.Time
-	Unread      uint32
+	ItemMap     map[string]struct{} // Used in checking whether an item has been seen before.
+	Refresh     time.Time           // Earliest time this feed should next be checked.
+	Unread      uint32              // Number of unread items. Used by aggregators.
 }
 
 // Update fetches any new items and updates f.
-func (f *Feed) Update() error {
+func (f *Feed) Update() (bool, error) {
 
 	// Check that we don't update too often.
 	if f.Refresh.After(time.Now()) {
-		return nil
+		return false, nil
 	}
 
 	if f.UpdateURL == "" {
-		return errors.New("Error: feed has no URL.")
+		return false, errors.New("Error: feed has no URL.")
 	}
 
 	if f.ItemMap == nil {
@@ -109,7 +109,7 @@ func (f *Feed) Update() error {
 
 	update, err := Fetch(f.UpdateURL)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	f.Refresh = update.Refresh
@@ -124,7 +124,7 @@ func (f *Feed) Update() error {
 		}
 	}
 
-	return nil
+	return true, nil
 }
 
 func (f *Feed) String() string {
@@ -140,6 +140,7 @@ func (f *Feed) String() string {
 // Item represents a single story.
 type Item struct {
 	Title   string
+	Summary string
 	Content string
 	Link    string
 	Date    time.Time
