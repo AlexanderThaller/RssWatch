@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexanderThaller/logger"
-	"github.com/SlyMarbo/rss"
+	rss "github.com/AlexanderThaller/rss-1"
 	"github.com/juju/errgo"
 	"github.com/vmihailenco/msgpack"
 )

@@ -15,12 +15,12 @@
 			"Rev": "2f014ea8b2a96158b0bd097b22b49d9235cee894"
 		},
 		{
-			"ImportPath": "github.com/AlexanderThaller/service",
-			"Rev": "85939145664a6f930552a22ed2ef44a79fc43ff9"
+			"ImportPath": "github.com/AlexanderThaller/rss-1",
+			"Rev": "039341040095109541411dc2ee30f6ed431b4156"
 		},
 		{
-			"ImportPath": "github.com/SlyMarbo/rss",
-			"Rev": "039341040095109541411dc2ee30f6ed431b4156"
+			"ImportPath": "github.com/AlexanderThaller/service",
+			"Rev": "85939145664a6f930552a22ed2ef44a79fc43ff9"
 		},
 		{
 			"ImportPath": "github.com/axgle/mahonia",
