@@ -1,18 +1,18 @@
 {
 	"ImportPath": "github.com/AlexanderThaller/RssWatch",
-	"GoVersion": "go1.3.1",
+	"GoVersion": "go1.2.1",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/AlexanderThaller/config",
-			"Rev": "6a4c52e5f6710ab582643211e373cb0d138763d5"
+			"Rev": "3e18c63fcac7f7221304ac1701b972f88127d51f"
 		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/logger",
-			"Comment": "1.1.0-6-g2f014ea",
-			"Rev": "2f014ea8b2a96158b0bd097b22b49d9235cee894"
+			"Comment": "1.1.0-7-g2b9771c",
+			"Rev": "2b9771cfb589e516e5a014a2635c67090f67072b"
 		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/rss-1",
@@ -21,6 +21,10 @@
 		{
 			"ImportPath": "github.com/AlexanderThaller/service",
 			"Rev": "85939145664a6f930552a22ed2ef44a79fc43ff9"
+		},
+		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Rev": "494b3ad22acb3467978419879b4ed227924df9cb"
 		},
 		{
 			"ImportPath": "github.com/axgle/mahonia",
