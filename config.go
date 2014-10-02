@@ -8,7 +8,7 @@ import (
 type Config struct {
 	DataFolder      string
 	Feeds           []Feed
-	LogLevel        map[logger.Logger]string
+	LogLevel        map[string]string
 	MailDestination string
 	MailDisable     bool
 	MailSender      string
@@ -24,7 +24,7 @@ type Config struct {
 }
 
 func (co *Config) Default() {
-	co.LogLevel = make(map[logger.Logger]string)
+	co.LogLevel = make(map[string]string)
 	co.LogLevel["."] = "Notice"
 
 	e := Feed{
@@ -48,6 +48,10 @@ func (co *Config) Default() {
 	co.MailDestination = "alexander@thaller.ws"
 	co.MailServer = "mail.thaller.ws:25"
 	co.MailSender = "rsswatch@thaller.ws"
+}
+
+func (co *Config) Format() config.Format {
+	return config.FormatTOML
 }
 
 // configure will parse the config file and return a new Config.
