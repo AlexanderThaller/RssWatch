@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	name = "RssWatch"
-
+	name                     = "RssWatch"
 	DefaultChannelBufferSize = 5000
 )
 
@@ -24,7 +23,6 @@ var (
 
 	flagConfigPath = flag.String("config", name+".cnf",
 		"The path to the config file.")
-	flagProfiling = flag.String("profile", "localhost:6060", "Enable profiling.")
 
 	configuration *Config
 )
@@ -49,9 +47,11 @@ func init() {
 	}
 
 	// Start profiling
-	if *flagProfiling != "" {
-		l.Info("Starting profiling on ", *flagProfiling)
-		go func() { l.Notice(http.ListenAndServe(*flagProfiling, nil)) }()
+	if configuration.Profile {
+		profilebind := configuration.ProfileBind
+
+		l.Info("Starting profiling on ", profilebind)
+		go func() { l.Notice(http.ListenAndServe(profilebind, nil)) }()
 	}
 }
 

@@ -4,6 +4,8 @@ MailDisable = false
 MailSender = "rsswatch@example.com"
 MailServer = "mail.example.com:25"
 SaveFeeds = true
+Profile = false
+ProfileBind = "localhost:6060"
 
 [LogLevel]
   . = "Info"

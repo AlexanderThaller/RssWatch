@@ -12,8 +12,11 @@ type Config struct {
 	MailSender      string
 	MailServer      string
 	SaveFeeds       bool
-	LogLevel        map[string]string
-	Feeds           []Feed
+	Profile         bool
+	ProfileBind     string
+
+	LogLevel map[string]string
+	Feeds    []Feed
 }
 
 func (co *Config) Default() {
@@ -34,6 +37,8 @@ func (co *Config) Default() {
 	co.MailDestination = "myemail@example.com"
 	co.MailServer = "mail.example.com:25"
 	co.MailSender = "rsswatch@example.com"
+	co.Profile = false
+	co.ProfileBind = "localhost:6060"
 }
 
 func (co *Config) Format() config.Format {
