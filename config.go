@@ -12,42 +12,28 @@ type Config struct {
 	MailSender      string
 	MailServer      string
 	SaveFeeds       bool
-	XmppDestination string
-	XmppDisable     bool
-	XmppDomain      string
-	XmppPassword    string
-	XmppPort        uint16
-	XmppSkipTLS     bool
-	XmppUsername    string
 	LogLevel        map[string]string
 	Feeds           []Feed
 }
 
 func (co *Config) Default() {
 	co.LogLevel = make(map[string]string)
-	co.LogLevel["."] = "Notice"
+	co.LogLevel["."] = "Info"
 
 	e := Feed{
 		Url:     "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom",
-		Filters: []string{".*Talk:.*"},
-		Folder:  "misc",
+		Filters: []string{".*", ".*Talk:.*"},
+		Folder:  "misc.wikipedia",
 	}
 
 	co.Feeds = append(co.Feeds, e)
 
 	co.DataFolder = "feeds"
 	co.SaveFeeds = true
-	co.XmppDisable = true
-	co.XmppDestination = "admin@ejabberd"
-	co.XmppDomain = "ejabberd"
-	co.XmppPassword = "test"
-	co.XmppPort = 5222
-	co.XmppSkipTLS = true
-	co.XmppUsername = "test"
 	co.MailDisable = false
-	co.MailDestination = "alexander@thaller.ws"
-	co.MailServer = "mail.thaller.ws:25"
-	co.MailSender = "rsswatch@thaller.ws"
+	co.MailDestination = "myemail@example.com"
+	co.MailServer = "mail.example.com:25"
+	co.MailSender = "rsswatch@example.com"
 }
 
 func (co *Config) Format() config.Format {

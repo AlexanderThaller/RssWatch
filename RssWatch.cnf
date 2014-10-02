@@ -1,0 +1,14 @@
+DataFolder = "feeds"
+MailDestination = "myemail@example.com"
+MailDisable = false
+MailSender = "rsswatch@example.com"
+MailServer = "mail.example.com:25"
+SaveFeeds = true
+
+[LogLevel]
+  . = "Info"
+
+[[Feeds]]
+  Url = "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom"
+  Filters = [".*", ".*Talk:.*"]
+  Folder = "misc.wikipedia"
