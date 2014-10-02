@@ -9,5 +9,6 @@
   * Default folder if none is specified
   * a way to autosubscribe to feeds in firefox propably reladed to the
     management stuff and the config autoreloading
+  * feed file downloading and attaching to email for like podcasts
 
 # Bugs
