@@ -7,8 +7,6 @@ import (
 
 type Config struct {
 	DataFolder      string
-	Feeds           []Feed
-	LogLevel        map[string]string
 	MailDestination string
 	MailDisable     bool
 	MailSender      string
@@ -21,6 +19,8 @@ type Config struct {
 	XmppPort        uint16
 	XmppSkipTLS     bool
 	XmppUsername    string
+	LogLevel        map[string]string
+	Feeds           []Feed
 }
 
 func (co *Config) Default() {
