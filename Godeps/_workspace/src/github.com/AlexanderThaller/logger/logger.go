@@ -78,7 +78,7 @@ func init() {
 }
 
 // ImportLoggers sets the LogLevel for the given Loggers.
-func ImportLoggers(lo map[Logger]string) (err error) {
+func ImportLoggers(lo map[string]string) (err error) {
 	if lo == nil {
 		err = errors.New("the loglevel map is nil")
 		return
@@ -90,7 +90,7 @@ func ImportLoggers(lo map[Logger]string) (err error) {
 			return e
 		}
 
-		SetLevel(k, p)
+		SetLevel(Logger(k), p)
 	}
 
 	return

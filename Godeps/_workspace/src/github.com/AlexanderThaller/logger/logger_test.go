@@ -399,7 +399,7 @@ func TestNamePriorityFail(t *testing.T) {
 }
 
 func TestImportLoggers(t *testing.T) {
-	loggers := make(map[Logger]string)
+	loggers := make(map[string]string)
 	loggers["."] = "Notice"
 
 	err := ImportLoggers(loggers)
@@ -409,7 +409,7 @@ func TestImportLoggers(t *testing.T) {
 }
 
 func TestImportLoggersFail(t *testing.T) {
-	loggers := make(map[Logger]string)
+	loggers := make(map[string]string)
 	loggers["."] = "FAIL"
 
 	err := ImportLoggers(loggers)
