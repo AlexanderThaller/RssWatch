@@ -21,7 +21,7 @@ var (
 	buildVersion string
 	buildTime    string
 
-	flagConfigPath = flag.String("config", name+".cnf",
+	flagConfigPath = flag.String("config", name+".cnf.toml",
 		"The path to the config file.")
 
 	configuration *Config
