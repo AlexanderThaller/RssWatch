@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/AlexanderThaller/RssWatch",
-	"GoVersion": "go1.2.1",
+	"GoVersion": "go1.3.1",
 	"Packages": [
 		"./..."
 	],
@@ -24,7 +24,8 @@
 		},
 		{
 			"ImportPath": "github.com/BurntSushi/toml",
-			"Rev": "494b3ad22acb3467978419879b4ed227924df9cb"
+			"Comment": "v0.1.0",
+			"Rev": "2ceedfee35ad3848e49308ab0c9a4f640cfb5fb2"
 		},
 		{
 			"ImportPath": "github.com/axgle/mahonia",

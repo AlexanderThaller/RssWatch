@@ -344,6 +344,19 @@ ArrayOfMixedSlices = [[1, 2], ["a", "b"]]
 			},
 			wantOutput: "[[struct]]\n  Int = 1\n\n[[struct]]\n  Int = 3\n",
 		},
+		"array of tables order": {
+			input: map[string]interface{}{
+				"map": map[string]interface{}{
+					"zero": 5,
+					"arr": []map[string]int{
+						map[string]int{
+							"friend": 5,
+						},
+					},
+				},
+			},
+			wantOutput: "[map]\n  zero = 5\n\n  [[map.arr]]\n    friend = 5\n",
+		},
 		"(error) top-level slice": {
 			input:     []struct{ Int int }{{1}, {2}, {3}},
 			wantError: errNoKey,
@@ -363,6 +376,16 @@ ArrayOfMixedSlices = [[1, 2], ["a", "b"]]
 		"(error) anonymous non-struct": {
 			input:     struct{ NonStruct }{5},
 			wantError: errAnonNonStruct,
+		},
+		"(error) empty key name": {
+			input:     map[string]int{"": 1},
+			wantError: errAnything,
+		},
+		"(error) empty map name": {
+			input: map[string]interface{}{
+				"": map[string]int{"v": 1},
+			},
+			wantError: errAnything,
 		},
 	}
 	for label, test := range tests {
@@ -410,6 +433,28 @@ func TestEncodeNestedTableArrays(t *testing.T) {
 	encodeExpected(t, "nested table arrays", value, expected, nil)
 }
 
+func TestEncodeArrayHashWithNormalHashOrder(t *testing.T) {
+	type Alpha struct {
+		V int
+	}
+	type Beta struct {
+		V int
+	}
+	type Conf struct {
+		V int
+		A Alpha
+		B []Beta
+	}
+
+	val := Conf{
+		V: 1,
+		A: Alpha{2},
+		B: []Beta{{3}},
+	}
+	expected := "V = 1\n\n[A]\n  V = 2\n\n[[B]]\n  V = 3\n"
+	encodeExpected(t, "array hash with normal hash order", val, expected, nil)
+}
+
 func encodeExpected(
 	t *testing.T, label string, val interface{}, wantStr string, wantErr error,
 ) {
@@ -418,6 +463,9 @@ func encodeExpected(
 	err := enc.Encode(val)
 	if err != wantErr {
 		if wantErr != nil {
+			if wantErr == errAnything && err != nil {
+				return
+			}
 			t.Errorf("%s: want Encode error %v, got %v", label, wantErr, err)
 		} else {
 			t.Errorf("%s: Encode failed: %s", label, err)
