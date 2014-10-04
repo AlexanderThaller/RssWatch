@@ -16,10 +16,10 @@ test:
 	go test ./...
 
 build:
-	go build -ldflags "-X main.buildtime `date +%s` -X main.version `git describe --always`" -o "$(NAME)"
+	go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -o "$(NAME)"
 
 build_race:
-	go build -ldflags "-X main.buildtime `date +%s` -X main.version `git describe --always`" -o "$(NAME)" -race
+	go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -o "$(NAME)" -race
 
 clean:
 	rm -f "$(NAME)"
