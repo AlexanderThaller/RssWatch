@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"io/ioutil"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -51,10 +52,17 @@ func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 func (feed Feed) Watch() {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
 
+	{
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		d := 1*time.Second + time.Duration(r.Intn(10000))*time.Millisecond
+		l.Debug("Sleep for ", d)
+		time.Sleep(d)
+	}
+
 	l.Debug("Will try to get feed")
 	err := feed.Get(feed.config)
 	if err != nil {
-		l.Error("can not get feed data")
+		l.Error("can not get feed data: ", errgo.Details(err))
 		return
 	}
 	l.Debug("Got feed")

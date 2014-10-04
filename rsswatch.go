@@ -14,7 +14,7 @@ import (
 
 const (
 	name                     = "RssWatch"
-	DefaultChannelBufferSize = 5000
+	DefaultChannelBufferSize = 50000
 )
 
 var (
