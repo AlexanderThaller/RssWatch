@@ -16,7 +16,7 @@
 		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/rss-1",
-			"Rev": "039341040095109541411dc2ee30f6ed431b4156"
+			"Rev": "b6a254e1e1136337c2edb8962a4ae93e8204bd4e"
 		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/service",
@@ -30,6 +30,15 @@
 		{
 			"ImportPath": "github.com/axgle/mahonia",
 			"Rev": "5dd783869dfe0a7d5a3049b20b8ae1418c5dcc8a"
+		},
+		{
+			"ImportPath": "github.com/gilliek/go-opml/opml",
+			"Comment": "v1.0.0-4-g279548d",
+			"Rev": "279548d83dbbcf188d8848fb660b1df56145c66a"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/now",
+			"Rev": "caef738a54cb159a5fe083e01609bc6873a84501"
 		},
 		{
 			"ImportPath": "github.com/juju/errgo",
