@@ -124,14 +124,21 @@ func (feed *Feed) Send(item *rss.Item) {
 
 func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
 	l := logger.New(name, "Feed", "Generate", "Message", item.data.ID)
-	l.SetLevel(logger.Debug)
 
 	buffer := bytes.NewBufferString("")
 
 	ftitle := strings.TrimSpace(feed.data.Title)
 	ftitle = strings.Replace(ftitle, ".", "_", -1)
+	ftitle = strings.TrimSpace(ftitle)
+	ftitle = strings.Replace(ftitle, "\n", " ", -1)
+
 	ititle := strings.TrimSpace(item.data.Title)
+	ititle = strings.Replace(ititle, "\n", " ", -1)
+
 	sender := feed.config.MailSender
+
+	l.Trace("From: ", sender)
+	l.Trace("Subject: ", ititle)
 
 	buffer.WriteString("From: " + sender + "\n")
 	buffer.WriteString("Subject: " + ititle + "\n")

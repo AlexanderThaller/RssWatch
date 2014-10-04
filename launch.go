@@ -38,6 +38,7 @@ func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
 			message := <-mails
 
 			l.Debug("Sending email")
+			l.Trace("Message:\n", message)
 			err := sendMail(message, conf)
 			if err != nil {
 				l.Error("Problem while sending email: ", err)
