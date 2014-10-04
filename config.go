@@ -23,13 +23,19 @@ func (co *Config) Default() {
 	co.LogLevel = make(map[string]string)
 	co.LogLevel["."] = "Info"
 
-	e := Feed{
+	e1 := Feed{
+		Url:    "https://en.wikipedia.org/w/index.php?title=RSS&feed=atom&action=history",
+		Folder: "misc.wikipedia",
+	}
+
+	e2 := Feed{
 		Url:     "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom",
 		Filters: []string{".*", ".*Talk:.*"},
 		Folder:  "misc.wikipedia",
 	}
 
-	co.Feeds = append(co.Feeds, e)
+	co.Feeds = append(co.Feeds, e1)
+	co.Feeds = append(co.Feeds, e2)
 
 	co.DataFolder = "feeds"
 	co.SaveFeeds = true

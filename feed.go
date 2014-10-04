@@ -33,7 +33,13 @@ func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 	feed.config = conf
 	feed.mails = mails
 
+	if len(feed.Filters) == 0 {
+		l.Debug("No filters specified will use default '.*'")
+		feed.Filters = []string{`.*`}
+	}
+
 	l.Debug("Setting up filters")
+	l.Trace("Filters: ", feed.Filters)
 	feed.filters = make(map[string]*regexp.Regexp)
 	for _, filter := range feed.Filters {
 		compiled, err := regexp.Compile(filter)
