@@ -58,13 +58,6 @@ func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
 func (feed Feed) Watch() {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
 
-	{
-		r := rand.New(rand.NewSource(time.Now().UnixNano()))
-		d := 1*time.Second + time.Duration(r.Intn(10000))*time.Millisecond
-		l.Debug("Sleep for ", d)
-		time.Sleep(d)
-	}
-
 	l.Debug("Will try to get feed")
 	err := feed.Get(feed.config)
 	if err != nil {
@@ -74,6 +67,12 @@ func (feed Feed) Watch() {
 	l.Debug("Got feed")
 
 	for {
+		{
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			d := 1*time.Second + time.Duration(r.Intn(9000))*time.Millisecond
+			l.Debug("Sleep for ", d)
+			time.Sleep(d)
+		}
 		refresh := feed.data.Refresh
 
 		d := refresh.Sub(time.Now())
@@ -90,6 +89,7 @@ func (feed Feed) Watch() {
 		updated, err := feed.data.Update()
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
+			continue
 		}
 
 		if !updated {
