@@ -66,6 +66,7 @@ func (feed Feed) Watch() {
 	}
 	l.Debug("Got feed")
 
+	var errcount uint
 	for {
 		{
 			r := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -87,10 +88,20 @@ func (feed Feed) Watch() {
 		l.Trace("Items length: ", len(items))
 		l.Debug("Try to update feed")
 		updated, err := feed.data.Update()
+		l.Debug("Error Count: ", errcount)
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
+			feed.data.Refresh = time.Now().Add(1 * time.Minute)
+			errcount += 1
+
+			if errcount == 10 {
+				l.Error("To much errors for this feed. Will now disable feed")
+				return
+			}
+
 			continue
 		}
+		errcount = 0
 
 		if !updated {
 			l.Debug("Not updated")
