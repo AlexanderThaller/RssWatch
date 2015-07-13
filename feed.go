@@ -13,8 +13,25 @@ import (
 	"github.com/AlexanderThaller/logger"
 	"github.com/SlyMarbo/rss"
 	"github.com/juju/errgo"
+	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
+
+var (
+	fetchDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
+		Namespace: "rsswatch",
+		Subsystem: "feed",
+		Help:      "The duration it took to update the feed",
+		Name:      "fetch_duration_milliseconds",
+	},
+		[]string{
+			"feed",
+		})
+)
+
+func init() {
+	prometheus.MustRegister(fetchDuration)
+}
 
 type Feed struct {
 	Url     string
@@ -59,12 +76,16 @@ func (feed Feed) Watch() {
 	l := logger.New(name, "Feed", "Watch", feed.Url)
 
 	l.Debug("Will try to get feed")
+	starttime := time.Now()
 	err := feed.Get(feed.config)
+	duration := time.Since(starttime)
 	if err != nil {
 		l.Error("can not get feed data: ", errgo.Details(err))
 		return
 	}
 	l.Debug("Got feed")
+
+	fetchDuration.WithLabelValues(feed.FormatTitle()).Observe(float64(duration.Nanoseconds() / 1000))
 
 	var errcount uint
 	for {
@@ -87,7 +108,11 @@ func (feed Feed) Watch() {
 
 		l.Trace("Items length: ", len(items))
 		l.Debug("Try to update feed")
+
+		starttime := time.Now()
 		err := feed.data.Update()
+		duration := time.Since(starttime)
+
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
 			feed.data.Refresh = time.Now().Add(1 * time.Minute)
@@ -101,6 +126,8 @@ func (feed Feed) Watch() {
 			continue
 		}
 		errcount = 0
+
+		fetchDuration.WithLabelValues(feed.FormatTitle()).Observe(float64(duration.Nanoseconds() / 1000))
 
 		l.Debug("Checking for new items")
 		feed.Check(items)
@@ -133,16 +160,22 @@ func (feed *Feed) Send(item *rss.Item) {
 	}
 }
 
-func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
-	l := logger.New(name, "Feed", "Generate", "Message", item.data.ID)
-
-	buffer := bytes.NewBufferString("")
-
+func (feed *Feed) FormatTitle() string {
 	ftitle := strings.TrimSpace(feed.data.Title)
 	ftitle = strings.Replace(ftitle, ".", "_", -1)
 	ftitle = strings.Replace(ftitle, "/", "_", -1)
 	ftitle = strings.TrimSpace(ftitle)
 	ftitle = strings.Replace(ftitle, "\n", " ", -1)
+
+	return ftitle
+}
+
+func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
+	l := logger.New(name, "Feed", "Generate", "Message", item.data.ID)
+
+	buffer := bytes.NewBufferString("")
+
+	ftitle := feed.FormatTitle()
 
 	ititle := strings.TrimSpace(item.data.Title)
 	ititle = strings.Replace(ititle, "\n", " ", -1)
