@@ -140,6 +140,7 @@ func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
 
 	ftitle := strings.TrimSpace(feed.data.Title)
 	ftitle = strings.Replace(ftitle, ".", "_", -1)
+	ftitle = strings.Replace(ftitle, "/", "_", -1)
 	ftitle = strings.TrimSpace(ftitle)
 	ftitle = strings.Replace(ftitle, "\n", " ", -1)
 
