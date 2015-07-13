@@ -1,7 +1,7 @@
 package main
 
 import (
-	rss "github.com/AlexanderThaller/rss-1"
+	"github.com/SlyMarbo/rss"
 )
 
 type Item struct {

@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"runtime"
 
 	"github.com/AlexanderThaller/logger"
-	"github.com/AlexanderThaller/service"
 	"github.com/juju/errgo"
 )
 
@@ -64,18 +62,10 @@ func main() {
 
 	l.Debug("Configuration: ", fmt.Sprintf("%+v", configuration))
 
-	watch()
-
 	// Launch
 	err := launch(configuration)
 	if err != nil {
 		l.Alert("Problem while launching: ", errgo.Details(err))
 		os.Exit(1)
 	}
-}
-
-func watch() {
-	service.WatchInt(name+".runtime.goroutines", runtime.NumGoroutine)
-	service.WatchUint(name+".service.count", service.Count)
-	service.WatchRuntimeMemory(name + ".runtime.memory")
 }

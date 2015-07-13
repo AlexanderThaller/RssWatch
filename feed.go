@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/AlexanderThaller/logger"
-	rss "github.com/AlexanderThaller/rss-1"
+	"github.com/SlyMarbo/rss"
 	"github.com/juju/errgo"
-	"github.com/vmihailenco/msgpack"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 type Feed struct {
@@ -87,8 +87,7 @@ func (feed Feed) Watch() {
 
 		l.Trace("Items length: ", len(items))
 		l.Debug("Try to update feed")
-		updated, err := feed.data.Update()
-		l.Debug("Error Count: ", errcount)
+		err := feed.data.Update()
 		if err != nil {
 			l.Warning("Can not update feed: ", errgo.Details(err))
 			feed.data.Refresh = time.Now().Add(1 * time.Minute)
@@ -102,11 +101,6 @@ func (feed Feed) Watch() {
 			continue
 		}
 		errcount = 0
-
-		if !updated {
-			l.Debug("Not updated")
-			continue
-		}
 
 		l.Debug("Checking for new items")
 		feed.Check(items)

@@ -3,10 +3,12 @@ package main
 import (
 	"bytes"
 	"net/smtp"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/AlexanderThaller/logger"
-	"github.com/AlexanderThaller/service"
 )
 
 func launch(conf *Config) error {
@@ -25,7 +27,7 @@ func launch(conf *Config) error {
 	}
 
 	l.Trace("Watching for signals")
-	service.WatchSignals()
+	waitForStopSignal()
 	return nil
 }
 
@@ -74,4 +76,15 @@ func sendMail(message *bytes.Buffer, conf *Config) error {
 	}
 
 	return nil
+}
+
+func waitForStopSignal() {
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
+	<-signals
 }
