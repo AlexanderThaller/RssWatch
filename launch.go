@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"net/http"
 	"net/smtp"
 	"os"
 	"os/signal"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/AlexanderThaller/logger"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 func launch(conf *Config) error {
@@ -26,6 +28,9 @@ func launch(conf *Config) error {
 		}
 	}
 
+	http.Handle("/metrics", prometheus.Handler())
+	go http.ListenAndServe(":9132", nil)
+
 	l.Trace("Watching for signals")
 	waitForStopSignal()
 	return nil
@@ -35,8 +40,25 @@ func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
 	l := logger.New(name, "launch", "Mails")
 	mails := make(chan *bytes.Buffer, 50000)
 
+	mailsQueue := prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "rsswatch",
+		Subsystem: "mails",
+		Help:      "Current count of mails currently in the send queue.",
+		Name:      "queue",
+	})
+	prometheus.MustRegister(mailsQueue)
+
+	mailsSent := prometheus.NewCounter(prometheus.CounterOpts{
+		Namespace: "rsswatch",
+		Subsystem: "mails",
+		Help:      "The number of emails sent.",
+		Name:      "sent",
+	})
+	prometheus.MustRegister(mailsSent)
+
 	go func() {
 		for {
+			mailsQueue.Set(float64(len(mails)))
 			message := <-mails
 
 			l.Debug("Sending email")
@@ -48,6 +70,8 @@ func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
 
 				continue
 			}
+
+			mailsSent.Inc()
 
 			// Sleep to avoid overloading the server
 			time.Sleep(100 * time.Millisecond)
