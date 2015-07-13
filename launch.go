@@ -48,6 +48,9 @@ func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
 
 				continue
 			}
+
+			// Sleep to avoid overloading the server
+			time.Sleep(100 * time.Millisecond)
 		}
 	}()
 
