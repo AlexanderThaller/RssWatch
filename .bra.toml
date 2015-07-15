@@ -2,16 +2,16 @@
 init_cmds = [
 	["go", "install"],
 	["go", "build"],
-	["./rsswatch", "-log.level=debug"]
+	["./rsswatch", "-log.level=info"]
 ]						# Commands run in start
 watch_all = true		# Watch all sub-directories
-watch_dirs = []			# Directories to watch
+watch_dirs = ["src"]			# Directories to watch
 watch_exts = [".go"]	# Extensions to watch
 build_delay = 1500		# Minimal interval to Trigger build event
 cmds = [
 	["go", "install"],
 	["go", "build"],
-	["./rsswatch", "-log.level=debug"]
+	["./rsswatch", "-log.level=info"]
 ]						# Commands to run
 
 [sync]

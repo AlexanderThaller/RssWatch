@@ -91,12 +91,12 @@ func (feed Feed) Launch(conf *Config, mails chan<- mailer.Mail) error {
 }
 
 func (feed Feed) Watch() {
-	log.Debug("Will try to get feed")
+	feed.Log().Info("get feed")
 	starttime := time.Now()
 	err := feed.Get(feed.config)
 	duration := time.Since(starttime)
 	if err != nil {
-		log.Error("can not get feed data: ", errgo.Details(err))
+		feed.Log().Error(errgo.Notef(err, "can not get feed data"))
 		return
 	}
 	log.Debug("Got feed")
@@ -122,14 +122,14 @@ func (feed Feed) Watch() {
 			items[item] = struct{}{}
 		}
 
-		log.Debug("Try to update feed")
+		feed.Log().Info("update feed")
 
 		starttime := time.Now()
 		err := feed.data.Update()
 		duration := time.Since(starttime)
 
 		if err != nil {
-			log.Warning("Can not update feed: ", errgo.Details(err))
+			feed.Log().Warning(errgo.Notef(err, "can not update feed"))
 			feed.data.Refresh = time.Now().Add(1 * time.Minute)
 			errcount += 1
 
@@ -357,4 +357,10 @@ func (feed *Feed) Filename(datafolder string) string {
 	filename := filepath.Join(datafolder, saveurl)
 
 	return filename
+}
+
+func (feed *Feed) Log() *log.Entry {
+	return log.WithFields(log.Fields{
+		"url": feed.Url,
+	})
 }

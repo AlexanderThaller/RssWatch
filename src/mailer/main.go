@@ -1,14 +1,12 @@
 package mailer
 
 import (
-	"bytes"
 	"io/ioutil"
-	"net/smtp"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/Unknwon/log"
+	log "github.com/Sirupsen/logrus"
 	"github.com/juju/errgo"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -78,9 +76,13 @@ func (mailer *Mailer) startLoop(queue <-chan Mail) {
 		mailsQueue.Set(float64(len(queue)))
 		message := <-queue
 
-		log.Debug("Sending email")
+		log.WithFields(log.Fields{
+			"sender":      message.Sender,
+			"destination": message.Destination,
+		}).Debug("Sending email")
+
 		mailer.activeSender.Add(1)
-		err := sendMail(message, mailer.server)
+		err := message.Send(mailer.server)
 		if err != nil {
 			log.Error("Problem while sending email: ", err.Error())
 			time.Sleep(2 * time.Second)
@@ -155,32 +157,6 @@ func (mailer *Mailer) LoadQueue(path string) error {
 
 	for _, message := range data {
 		mailer.queue <- message
-	}
-
-	return nil
-}
-
-func sendMail(message Mail, server string) error {
-	conn, err := smtp.Dial(server)
-	if err != nil {
-		return errgo.Notef(err, "can not connect to server")
-	}
-	defer conn.Close()
-
-	conn.Mail(message.Sender)
-	conn.Rcpt(message.Destination)
-
-	wc, err := conn.Data()
-	if err != nil {
-		return errgo.Notef(err, "can not get writer from connection")
-	}
-	defer wc.Close()
-
-	buffer := bytes.NewBufferString(message.Message)
-
-	_, err = buffer.WriteTo(wc)
-	if err != nil {
-		return errgo.Notef(err, "can not write message to connection writer")
 	}
 
 	return nil
