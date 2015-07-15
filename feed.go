@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/AlexanderThaller/rss"
+	"github.com/AlexanderThaller/rsswatch/src/mailer"
 	log "github.com/Sirupsen/logrus"
 	"github.com/juju/errgo"
 	"github.com/prometheus/client_golang/prometheus"
@@ -61,10 +62,10 @@ type Feed struct {
 	filters map[string]*regexp.Regexp
 	data    *rss.Feed
 	config  *Config
-	mails   chan<- *bytes.Buffer
+	mails   chan<- mailer.Mail
 }
 
-func (feed Feed) Launch(conf *Config, mails chan<- *bytes.Buffer) error {
+func (feed Feed) Launch(conf *Config, mails chan<- mailer.Mail) error {
 	feed.config = conf
 	feed.mails = mails
 
@@ -165,7 +166,12 @@ func (feed *Feed) Send(item *rss.Item) {
 		}
 
 		log.Debug("Sending email for filter ", item.Filter)
-		feed.mails <- message
+		feed.mails <- mailer.Mail{
+			Sender:      feed.config.MailSender,
+			Destination: feed.config.MailDestination,
+			Message:     message.String(),
+		}
+
 		log.Debug("Sent mail")
 	}
 }

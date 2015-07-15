@@ -22,20 +22,18 @@
 package main
 
 import (
-	"bytes"
 	"net/http"
-	"net/smtp"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
-	log "github.com/Sirupsen/logrus"
+	"github.com/AlexanderThaller/rsswatch/src/mailer"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 func launch(conf *Config, prometheusBinding string) error {
-	mails, err := launchMails(conf)
+	mailsender := mailer.New(conf.MailServer)
+	mails, err := mailsender.Launch()
 	if err != nil {
 		return err
 	}
@@ -51,72 +49,8 @@ func launch(conf *Config, prometheusBinding string) error {
 	go http.ListenAndServe(prometheusBinding, nil)
 
 	waitForStopSignal()
-	return nil
-}
 
-func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
-	mails := make(chan *bytes.Buffer, 50000)
-
-	mailsQueue := prometheus.NewGauge(prometheus.GaugeOpts{
-		Namespace: "rsswatch",
-		Subsystem: "mails",
-		Help:      "Current count of mails currently in the send queue.",
-		Name:      "queue",
-	})
-	prometheus.MustRegister(mailsQueue)
-
-	mailsSent := prometheus.NewCounter(prometheus.CounterOpts{
-		Namespace: "rsswatch",
-		Subsystem: "mails",
-		Help:      "The number of emails sent.",
-		Name:      "sent",
-	})
-	prometheus.MustRegister(mailsSent)
-
-	go func() {
-		for {
-			mailsQueue.Set(float64(len(mails)))
-			message := <-mails
-
-			log.Debug("Sending email")
-			err := sendMail(message, conf)
-			if err != nil {
-				log.Error("Problem while sending email: ", err.Error())
-				time.Sleep(2 * time.Second)
-
-				continue
-			}
-
-			mailsSent.Inc()
-
-			// Sleep to avoid overloading the server
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
-
-	return mails, nil
-}
-
-func sendMail(message *bytes.Buffer, conf *Config) error {
-	conn, err := smtp.Dial(conf.MailServer)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	conn.Mail(conf.MailSender)
-	conn.Rcpt(conf.MailDestination)
-
-	wc, err := conn.Data()
-	if err != nil {
-		return err
-	}
-	defer wc.Close()
-
-	_, err = message.WriteTo(wc)
-	if err != nil {
-		return err
-	}
+	mailsender.Stop()
 
 	return nil
 }
