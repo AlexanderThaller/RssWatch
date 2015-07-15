@@ -1,40 +1,49 @@
 {
-	"ImportPath": "github.com/AlexanderThaller/RssWatch",
-	"GoVersion": "go1.3.1",
+	"ImportPath": "github.com/AlexanderThaller/rsswatch",
+	"GoVersion": "go1.4",
 	"Packages": [
 		"./..."
 	],
 	"Deps": [
+		{
+			"ImportPath": "bitbucket.org/ww/goautoneg",
+			"Comment": "null-5",
+			"Rev": "75cd24fc2f2c2a2088577d12123ddee5f54e0675"
+		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/config",
 			"Rev": "3e18c63fcac7f7221304ac1701b972f88127d51f"
 		},
 		{
 			"ImportPath": "github.com/AlexanderThaller/logger",
-			"Comment": "1.1.0-7-g2b9771c",
-			"Rev": "2b9771cfb589e516e5a014a2635c67090f67072b"
+			"Comment": "1.1.0-8-g24123e4",
+			"Rev": "24123e4bfa9432ef59adaa9255c285c298a6b1ab"
 		},
 		{
-			"ImportPath": "github.com/AlexanderThaller/rss-1",
-			"Rev": "b6a254e1e1136337c2edb8962a4ae93e8204bd4e"
-		},
-		{
-			"ImportPath": "github.com/AlexanderThaller/service",
-			"Rev": "85939145664a6f930552a22ed2ef44a79fc43ff9"
+			"ImportPath": "github.com/AlexanderThaller/rss",
+			"Rev": "f05cc6586b03f5af77cae458eeaf3a84e5bdd30b"
 		},
 		{
 			"ImportPath": "github.com/BurntSushi/toml",
-			"Comment": "v0.1.0",
-			"Rev": "2ceedfee35ad3848e49308ab0c9a4f640cfb5fb2"
+			"Comment": "v0.1.0-9-g3883ac1",
+			"Rev": "3883ac1ce943878302255f538fce319d23226223"
 		},
 		{
 			"ImportPath": "github.com/axgle/mahonia",
 			"Rev": "5dd783869dfe0a7d5a3049b20b8ae1418c5dcc8a"
 		},
 		{
+			"ImportPath": "github.com/beorn7/perks/quantile",
+			"Rev": "b965b613227fddccbfffe13eae360ed3fa822f8d"
+		},
+		{
 			"ImportPath": "github.com/gilliek/go-opml/opml",
 			"Comment": "v1.0.0-4-g279548d",
 			"Rev": "279548d83dbbcf188d8848fb660b1df56145c66a"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "16256d3ce6929458613798ee44b7914a3f59f5c6"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/now",
@@ -45,12 +54,37 @@
 			"Rev": "26caa7d4884f6048c5687fa44c410e5d5d95e554"
 		},
 		{
-			"ImportPath": "github.com/vmihailenco/bufio",
-			"Rev": "24e7e48f60fc2d9e99e43c07485d9fff42051e66"
+			"ImportPath": "github.com/matttproud/golang_protobuf_extensions/pbutil",
+			"Rev": "fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a"
 		},
 		{
-			"ImportPath": "github.com/vmihailenco/msgpack",
-			"Rev": "20c1b88a6c7fc5432037439f4e8c582e236fb205"
+			"ImportPath": "github.com/prometheus/client_golang/model",
+			"Comment": "0.6.0",
+			"Rev": "e319516b0f97867d36151451cab8d4aefbe1786b"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_golang/prometheus",
+			"Comment": "0.6.0",
+			"Rev": "e319516b0f97867d36151451cab8d4aefbe1786b"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_golang/text",
+			"Comment": "0.6.0",
+			"Rev": "e319516b0f97867d36151451cab8d4aefbe1786b"
+		},
+		{
+			"ImportPath": "github.com/prometheus/client_model/go",
+			"Comment": "model-0.0.2-12-gfa8ad6f",
+			"Rev": "fa8ad6fec33561be4280a8f0514318c79d7f6cb6"
+		},
+		{
+			"ImportPath": "github.com/prometheus/procfs",
+			"Rev": "ee2372b58cee877abe07cde670d04d3b3bac5ee6"
+		},
+		{
+			"ImportPath": "gopkg.in/vmihailenco/msgpack.v2",
+			"Comment": "v2.3",
+			"Rev": "9dbd4ac30c0b67927f0fb5557fb8341047bd35f7"
 		}
 	]
 }

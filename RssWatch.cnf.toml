@@ -1,14 +1,14 @@
 DataFolder = "feeds"
-MailDestination = "myemail@example.com"
+MailDestination = "hebz0rl@thaller.ws"
 MailDisable = false
-MailSender = "rsswatch@example.com"
-MailServer = "mail.example.com:25"
+MailSender = "rsswatch@thaller.ws"
+MailServer = "mail.thaller.ws:25"
 SaveFeeds = true
 Profile = false
 ProfileBind = "localhost:6060"
 
 [LogLevel]
-  . = "Info"
+  . = "Debug"
 
 [[Feeds]]
   Url = "https://en.wikipedia.org/w/index.php?title=RSS&feed=atom&action=history"
@@ -18,3 +18,7 @@ ProfileBind = "localhost:6060"
   Url = "https://en.wikipedia.org/w/index.php?title=Special:RecentChanges&feed=atom"
   Filters = [".*", ".*Talk:.*"]
   Folder = "misc.wikipedia"
+
+[[Feeds]]
+  Url = "http://viruscomix.com/rss.xml"
+  Folder = "comics"

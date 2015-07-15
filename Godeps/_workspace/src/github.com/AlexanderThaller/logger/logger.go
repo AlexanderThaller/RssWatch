@@ -50,7 +50,7 @@ const (
 
 var (
 	format     = "[{{.Time}} {{.Priority}} {{.Logger}}] - {{.Message}}.\n"
-	timeformat = time.RFC3339
+	timeformat = time.RFC3339Nano
 
 	priorities     map[Priority]string
 	list           loggers
