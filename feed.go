@@ -49,10 +49,29 @@ var (
 		[]string{
 			"feed",
 		})
+
+	fetchErrorCount = prometheus.NewGaugeVec(prometheus.GaugeOpts{
+		Namespace: "rsswatch",
+		Subsystem: "feed",
+		Help:      "The current error count for the feed",
+		Name:      "error_count",
+	},
+		[]string{
+			"feed",
+		})
+
+	feedsDisabled = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "rsswatch",
+		Subsystem: "feed",
+		Help:      "How many feeds are currently disabled",
+		Name:      "disabled",
+	})
 )
 
 func init() {
 	prometheus.MustRegister(fetchDuration)
+	prometheus.MustRegister(fetchErrorCount)
+	prometheus.MustRegister(feedsDisabled)
 }
 
 type Feed struct {
@@ -70,11 +89,11 @@ func (feed Feed) Launch(conf *Config, mails chan<- mailer.Mail) error {
 	feed.mails = mails
 
 	if len(feed.Filters) == 0 {
-		log.Debug("No filters specified will use default '.*'")
+		feed.Log().Debug("No filters specified will use default '.*'")
 		feed.Filters = []string{`.*`}
 	}
 
-	log.Debug("Setting up filters")
+	feed.Log().Debug("Setting up filters")
 	feed.filters = make(map[string]*regexp.Regexp)
 	for _, filter := range feed.Filters {
 		compiled, err := regexp.Compile(filter)
@@ -97,24 +116,29 @@ func (feed Feed) Watch() {
 	duration := time.Since(starttime)
 	if err != nil {
 		feed.Log().Error(errgo.Notef(err, "can not get feed data"))
+		feedsDisabled.Inc()
+
 		return
 	}
-	log.Debug("Got feed")
+	feed.Log().Debug("Got feed")
 
 	fetchDuration.WithLabelValues(feed.FormatTitle()).Observe(float64(duration.Nanoseconds() / 1000))
 
 	var errcount uint
+
 	for {
+		fetchErrorCount.WithLabelValues(feed.FormatTitle()).Set(float64(errcount))
+
 		{
 			r := rand.New(rand.NewSource(time.Now().UnixNano()))
 			d := 1*time.Second + time.Duration(r.Intn(9000))*time.Millisecond
-			log.Debug("Sleep for ", d)
+			feed.Log().Debug("Sleep for ", d)
 			time.Sleep(d)
 		}
 		refresh := feed.data.Refresh
 
 		d := refresh.Sub(time.Now())
-		log.Debug("Sleep for ", d, " (Until ", refresh, ")")
+		feed.Log().Debug("Sleep for ", d, " (Until ", refresh, ")")
 		time.Sleep(d)
 
 		items := make(map[string]struct{})
@@ -140,6 +164,7 @@ func (feed Feed) Watch() {
 
 			if errcount == 25 {
 				feed.Log().Error(errgo.New("to much errors for this feed. will now disable feed"))
+				feedsDisabled.Inc()
 				return
 			}
 
@@ -149,13 +174,13 @@ func (feed Feed) Watch() {
 
 		fetchDuration.WithLabelValues(feed.FormatTitle()).Observe(float64(duration.Nanoseconds() / 1000))
 
-		log.Debug("Checking for new items")
+		feed.Log().Debug("Checking for new items")
 		feed.Check(items)
 
-		log.Debug("Updated feed will now try to save")
+		feed.Log().Debug("Updated feed will now try to save")
 		err = feed.Save(feed.config.DataFolder)
 		if err != nil {
-			log.Error("Problem while saving: ", errgo.Details(err))
+			feed.Log().Error("Problem while saving: ", errgo.Details(err))
 			return
 		}
 	}
@@ -166,18 +191,18 @@ func (feed *Feed) Send(item *rss.Item) {
 	for _, item := range filtered {
 		message, err := feed.GenerateMessage(item)
 		if err != nil {
-			log.Warning("Can not generate message: ", err)
+			feed.Log().Warning("Can not generate message: ", err)
 			continue
 		}
 
-		log.Debug("Sending email for filter ", item.Filter)
+		feed.Log().Debug("Sending email for filter ", item.Filter)
 		feed.mails <- mailer.Mail{
 			Sender:      feed.config.MailSender,
 			Destination: feed.config.MailDestination,
 			Message:     message.String(),
 		}
 
-		log.Debug("Sent mail")
+		feed.Log().Debug("Sent mail")
 	}
 }
 
@@ -224,18 +249,18 @@ func (feed *Feed) GenerateMessage(item *Item) (*bytes.Buffer, error) {
 }
 
 func (feed *Feed) Filter(item *rss.Item) []*Item {
-	log.Debug("Checking filter for ", item.Title)
+	feed.Log().Debug("Checking filter for ", item.Title)
 
 	var out []*Item
 	for filter, compiled := range feed.filters {
-		log.Debug("Checking filter: ", filter)
+		feed.Log().Debug("Checking filter: ", filter)
 
 		matches := compiled.MatchString(item.Title)
 		if !matches {
-			log.Debug("Item does not match")
+			feed.Log().Debug("Item does not match")
 			continue
 		}
-		log.Debug("Item matches filter adding to output")
+		feed.Log().Debug("Item matches filter adding to output")
 
 		newitem := Item{
 			Filter: filter,
@@ -261,27 +286,27 @@ func (feed *Feed) Check(items map[string]struct{}) {
 
 func (feed *Feed) Get(conf *Config) error {
 	if conf.SaveFeeds {
-		log.Debug("Will try to restore feed")
+		feed.Log().Debug("Will try to restore feed")
 
 		err := feed.Restore(conf.DataFolder)
 		if err == nil {
-			log.Debug("Restored feed. Will return feed")
+			feed.Log().Debug("Restored feed. Will return feed")
 			return nil
 		}
 
-		log.Debug("Can not restore feed")
+		feed.Log().Debug("Can not restore feed")
 		if !os.IsNotExist(err) {
-			log.Debug("Error is not a not exists error we will return this")
+			feed.Log().Debug("Error is not a not exists error we will return this")
 			return err
 		}
 	}
 
-	log.Debug("Will try to fetch feed")
+	feed.Log().Debug("Will try to fetch feed")
 	data, err := rss.Fetch(feed.Url)
 	if err != nil {
 		return err
 	}
-	log.Debug("Fetched feed")
+	feed.Log().Debug("Fetched feed")
 	feed.data = data
 
 	for _, item := range data.Items {
@@ -301,59 +326,59 @@ func (feed *Feed) Get(conf *Config) error {
 func (feed *Feed) Restore(datafolder string) error {
 	filename := feed.Filename(datafolder) + ".msgpack"
 
-	log.Debug("Check if file exists")
+	feed.Log().Debug("Check if file exists")
 	_, err := os.Stat(filename)
 	if err != nil {
 		return err
 	}
-	log.Debug("File does exist")
+	feed.Log().Debug("File does exist")
 
-	log.Debug("Read from file")
+	feed.Log().Debug("Read from file")
 	bytes, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}
-	log.Debug("Finished reading file")
+	feed.Log().Debug("Finished reading file")
 
 	var data rss.Feed
-	log.Debug("Unmarshal bytes from file")
+	feed.Log().Debug("Unmarshal bytes from file")
 	err = msgpack.Unmarshal(bytes, &data)
 	if err != nil {
 		return err
 	}
-	log.Debug("Finished unmarshaling")
-	log.Debug("Finished restoring")
+	feed.Log().Debug("Finished unmarshaling")
+	feed.Log().Debug("Finished restoring")
 	feed.data = &data
 
 	return nil
 }
 
 func (feed *Feed) Save(datafolder string) error {
-	log.Debug("Getting filename for file")
+	feed.Log().Debug("Getting filename for file")
 	filename := feed.Filename(datafolder) + ".msgpack"
 
-	log.Debug("Creating folder for file")
+	feed.Log().Debug("Creating folder for file")
 	err := os.MkdirAll(datafolder, 0755)
 	if err != nil {
 		return err
 	}
-	log.Debug("Created folder for file")
+	feed.Log().Debug("Created folder for file")
 
-	log.Debug("Marshaling feed data to msgpack")
+	feed.Log().Debug("Marshaling feed data to msgpack")
 	bytes, err := msgpack.Marshal(feed.data)
 	if err != nil {
 		return err
 	}
-	log.Debug("Finished marshalling")
+	feed.Log().Debug("Finished marshalling")
 
-	log.Debug("Will now try to save the marshaled feed to the file")
+	feed.Log().Debug("Will now try to save the marshaled feed to the file")
 	err = ioutil.WriteFile(filename, bytes, 0644)
 	if err != nil {
 		return err
 	}
-	log.Debug("Finished saving to file")
+	feed.Log().Debug("Finished saving to file")
 
-	log.Debug("Finished saving the feed")
+	feed.Log().Debug("Finished saving the feed")
 	return nil
 }
 
