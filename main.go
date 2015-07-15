@@ -22,10 +22,48 @@
 package main
 
 import (
-	"github.com/AlexanderThaller/rss"
+	"flag"
+	"fmt"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/juju/errgo"
 )
 
-type Item struct {
-	Filter string
-	data   *rss.Item
+const (
+	name                     = "RssWatch"
+	DefaultChannelBufferSize = 50000
+)
+
+var (
+	buildVersion string
+	buildTime    string
+)
+
+func main() {
+	var (
+		configPath        = flag.String("config.path", "config.toml", "the path to the config file.")
+		logLevel          = flag.String("log.level", "info", "the loglevel of the application.")
+		prometheusBinding = flag.String("prometheus.binding", ":9132", "the address and port to bind the prometheus metrics to.")
+	)
+	flag.Parse()
+
+	// Set loglevel
+	level, err := log.ParseLevel(*logLevel)
+	if err != nil {
+		log.Fatal(errgo.Notef(err, "can not parse loglevel"))
+	}
+	log.SetLevel(level)
+
+	// Load configuration
+	configuration, err := configure(*configPath)
+	if err != nil {
+		log.Fatal("Can not configure ", errgo.Details(err))
+	}
+	log.Debug("Configuration: ", fmt.Sprintf("%+v", configuration))
+
+	// Launch
+	err = launch(configuration, *prometheusBinding)
+	if err != nil {
+		log.Fatal("Problem while launching: ", errgo.Details(err))
+	}
 }

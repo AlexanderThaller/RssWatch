@@ -1,3 +1,24 @@
+// The MIT License (MIT)
+//
+// Copyright (c) 2015 Alexander Thaller
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy of
+// this software and associated documentation files (the "Software"), to deal in
+// the Software without restriction, including without limitation the rights to
+// use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+// the Software, and to permit persons to whom the Software is furnished to do so,
+// subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+// FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+// COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+// IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+// CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 package main
 
 import (
@@ -9,13 +30,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/AlexanderThaller/logger"
+	log "github.com/Sirupsen/logrus"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func launch(conf *Config) error {
-	l := logger.New(name, "launch")
-
+func launch(conf *Config, prometheusBinding string) error {
 	mails, err := launchMails(conf)
 	if err != nil {
 		return err
@@ -29,15 +48,13 @@ func launch(conf *Config) error {
 	}
 
 	http.Handle("/metrics", prometheus.Handler())
-	go http.ListenAndServe(":9132", nil)
+	go http.ListenAndServe(prometheusBinding, nil)
 
-	l.Trace("Watching for signals")
 	waitForStopSignal()
 	return nil
 }
 
 func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
-	l := logger.New(name, "launch", "Mails")
 	mails := make(chan *bytes.Buffer, 50000)
 
 	mailsQueue := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -61,11 +78,10 @@ func launchMails(conf *Config) (chan<- *bytes.Buffer, error) {
 			mailsQueue.Set(float64(len(mails)))
 			message := <-mails
 
-			l.Debug("Sending email")
-			l.Trace("Message:\n", message)
+			log.Debug("Sending email")
 			err := sendMail(message, conf)
 			if err != nil {
-				l.Error("Problem while sending email: ", err)
+				log.Error("Problem while sending email: ", err.Error())
 				time.Sleep(2 * time.Second)
 
 				continue

@@ -1,4 +1,4 @@
-NAME = RssWatch
+NAME = rsswatch
 
 all:
 	make format

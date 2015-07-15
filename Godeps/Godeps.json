@@ -15,11 +15,6 @@
 			"Rev": "3e18c63fcac7f7221304ac1701b972f88127d51f"
 		},
 		{
-			"ImportPath": "github.com/AlexanderThaller/logger",
-			"Comment": "1.1.0-8-g24123e4",
-			"Rev": "24123e4bfa9432ef59adaa9255c285c298a6b1ab"
-		},
-		{
 			"ImportPath": "github.com/AlexanderThaller/rss",
 			"Rev": "f05cc6586b03f5af77cae458eeaf3a84e5bdd30b"
 		},
@@ -27,6 +22,11 @@
 			"ImportPath": "github.com/BurntSushi/toml",
 			"Comment": "v0.1.0-9-g3883ac1",
 			"Rev": "3883ac1ce943878302255f538fce319d23226223"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.7.3-13-g81e2611",
+			"Rev": "81e2611f37acccd8cb5e4e1a5a4a5f6c9c7f4537"
 		},
 		{
 			"ImportPath": "github.com/axgle/mahonia",
