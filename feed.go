@@ -130,11 +130,16 @@ func (feed Feed) Watch() {
 
 		if err != nil {
 			feed.Log().Warning(errgo.Notef(err, "can not update feed"))
-			feed.data.Refresh = time.Now().Add(1 * time.Minute)
-			errcount += 1
 
-			if errcount == 10 {
-				log.Error("To much errors for this feed. Will now disable feed")
+			errcount += 1
+			waitduration := time.Duration(errcount) * time.Minute
+			feed.Log().Debug("set waitduration to ", waitduration)
+
+			feed.data.Refresh = time.Now().Add(waitduration)
+			feed.Log().Debug("will refresh at ", feed.data.Refresh)
+
+			if errcount == 25 {
+				feed.Log().Error(errgo.New("to much errors for this feed. will now disable feed"))
 				return
 			}
 
