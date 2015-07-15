@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/AlexanderThaller/logger"
-	"github.com/SlyMarbo/rss"
+	"github.com/AlexanderThaller/rss"
 	"github.com/juju/errgo"
 	"github.com/prometheus/client_golang/prometheus"
 	"gopkg.in/vmihailenco/msgpack.v2"
