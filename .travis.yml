@@ -7,8 +7,8 @@ go:
 
 before_install:
   - go get github.com/AlexanderThaller/godep
-  - go get golang.org/x/tools/astutil
   - go get github.com/AlexanderThaller/goimports
+  - go get golang.org/x/tools/go/ast/astutil
   - go get github.com/AlexanderThaller/lint/golint
   - export PATH=$HOME/gopath/bin:$PATH
 
