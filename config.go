@@ -64,15 +64,3 @@ func (co *Config) Default() {
 func (co *Config) Format() config.Format {
 	return config.FormatTOML
 }
-
-// configure will parse the config file and return a new Config.
-func configure(path string) (conf *Config, err error) {
-	c := new(Config)
-	err = config.Configure(path, c)
-	if err != nil {
-		return
-	}
-
-	conf = c
-	return
-}

@@ -23,10 +23,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/juju/errgo"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -41,9 +41,8 @@ var (
 
 func main() {
 	var (
-		configPath        = flag.String("config.path", "config.toml", "the path to the config file.")
-		logLevel          = flag.String("log.level", "info", "the loglevel of the application.")
-		prometheusBinding = flag.String("prometheus.binding", ":9132", "the address and port to bind the prometheus metrics to.")
+		logLevel = flag.String("log.level", "info", "the loglevel of the application.")
+		//prometheusBinding = flag.String("prometheus.binding", ":9132", "the address and port to bind the prometheus metrics to.")
 	)
 	flag.Parse()
 
@@ -55,15 +54,40 @@ func main() {
 	log.SetLevel(level)
 
 	// Load configuration
-	configuration, err := configure(*configPath)
+	err = configure()
 	if err != nil {
-		log.Fatal("Can not configure ", errgo.Details(err))
+		log.Fatal("can not configure ", err)
 	}
-	log.Debug("Configuration: ", fmt.Sprintf("%+v", configuration))
+	log.Debug("config: ", viper.AllSettings())
+
+	log.Debug("feeds: ", viper.GetStringMap("feeds")
 
 	// Launch
-	err = launch(configuration, *prometheusBinding)
+	/*err = launch(*prometheusBinding)
 	if err != nil {
 		log.Fatal("Problem while launching: ", errgo.Details(err))
+	}*/
+}
+
+// configure will set default values for the configuration
+func configure() error {
+	viper.SetConfigName("config")
+
+	viper.AddConfigPath("$HOME/.rsswatch")
+	viper.AddConfigPath("/etc/rsswatch/")
+	viper.AddConfigPath("/usr/local/etc/rsswatch/")
+
+	viper.SetDefault("Feeds.DataFolder", "feeds")
+	viper.SetDefault("Feeds.Save", true)
+	viper.SetDefault("Mail.Destination", "myemail@example.com")
+	viper.SetDefault("Mail.Enable", true)
+	viper.SetDefault("Mail.Sender", "rsswatch@example.com")
+	viper.SetDefault("Mail.Server", "mail.example.com:25")
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		return errgo.Notef(err, "can not read in config file")
 	}
+
+	return nil
 }

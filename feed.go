@@ -39,6 +39,10 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+const (
+	DefaultErrCount = 100
+)
+
 var (
 	fetchDuration = prometheus.NewSummaryVec(prometheus.SummaryOpts{
 		Namespace: "rsswatch",
@@ -162,7 +166,7 @@ func (feed Feed) Watch() {
 			feed.data.Refresh = time.Now().Add(waitduration)
 			feed.Log().Debug("will refresh at ", feed.data.Refresh)
 
-			if errcount == 25 {
+			if errcount == DefaultErrCount {
 				feed.Log().Error(errgo.New("to much errors for this feed. will now disable feed"))
 				feedsDisabled.Inc()
 				return
