@@ -60,7 +60,7 @@ func main() {
 	}
 	log.Debug("config: ", viper.AllSettings())
 
-	log.Debug("feeds: ", viper.GetStringMap("feeds")
+	log.Debug("feeds: ", viper.GetStringMap("feeds"))
 
 	// Launch
 	/*err = launch(*prometheusBinding)
