@@ -1,0 +1,5 @@
+package: github.com/AlexanderThaller/rsswatch/cmd/opmltotoml
+import:
+- package: github.com/gilliek/go-opml
+  subpackages:
+  - /opml

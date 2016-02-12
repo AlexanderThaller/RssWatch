@@ -16,10 +16,10 @@ test:
 	go test ./...
 
 build:
-	go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -o "$(NAME)"
+	GO15VENDOREXPERIMENT=1 go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -o "$(NAME)"
 
 build_race:
-	go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -o "$(NAME)" -race
+	GO15VENDOREXPERIMENT=1 go build -ldflags "-X main.buildTime `date +%s` -X main.buildVersion `git describe --always`" -o "$(NAME)" -race
 
 clean:
 	rm -f "$(NAME)"
@@ -48,10 +48,7 @@ benchmark:
 	go test -test.benchmem=true -test.bench . 2> /dev/null
 
 dependencies_save:
-	godep save ./...
+	GO15VENDOREXPERIMENT=1 glide init
 
 dependencies_update:
-	godep update ./...
-
-dependencies_restore:
-	godep restore ./...
+	GO15VENDOREXPERIMENT=1 glide up

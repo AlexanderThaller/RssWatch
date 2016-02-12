@@ -1,0 +1,14 @@
+package: github.com/AlexanderThaller/rsswatch
+import:
+- package: github.com/AlexanderThaller/config
+- package: github.com/AlexanderThaller/rss
+- package: github.com/Sirupsen/logrus
+- package: github.com/gilliek/go-opml
+  subpackages:
+  - /opml
+- package: github.com/juju/errgo
+- package: github.com/prometheus/client_golang
+  subpackages:
+  - /prometheus
+- package: github.com/spf13/viper
+- package: gopkg.in/vmihailenco/msgpack.v2
